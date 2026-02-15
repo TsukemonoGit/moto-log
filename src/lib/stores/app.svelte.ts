@@ -8,6 +8,7 @@ import type {
   AnyRecord,
   RecordType,
 } from "$lib/models/types";
+import type { NostrEvent } from "nostr-tools";
 
 // --- Auth ---
 let _pubkey = $state<string | null>(null);
@@ -239,5 +240,31 @@ export const records = {
     _inspections = [];
     _shopRecords = [];
     _odometerRecords = [];
+  },
+};
+
+// --- Raw Events (開発者ビュー用) ---
+let _rawEvents = $state<Map<string, NostrEvent>>(new Map());
+
+export const rawEventStore = {
+  get events() {
+    return _rawEvents;
+  },
+
+  set(dTag: string, event: NostrEvent) {
+    _rawEvents = new Map(_rawEvents);
+    _rawEvents.set(dTag, event);
+  },
+
+  get(dTag: string): NostrEvent | undefined {
+    return _rawEvents.get(dTag);
+  },
+
+  getForVehicle(vehicleId: string): NostrEvent | undefined {
+    return _rawEvents.get(`vehicle:${vehicleId}`);
+  },
+
+  clear() {
+    _rawEvents = new Map();
   },
 };

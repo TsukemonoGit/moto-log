@@ -7,7 +7,9 @@ import type {
   ShopRecord,
   OdometerRecord,
 } from "$lib/models/types";
+import type { NostrEvent } from "nostr-tools";
 import { uniq } from "rx-nostr";
+import { rawEventStore } from "$lib/stores/app.svelte";
 
 const APP_LABEL = "nostr-moto-log";
 
@@ -68,6 +70,9 @@ export function loadAllData(pubkey: string): Promise<LoadedData> {
             event.tags.find((t) => t[0] === "l" && t[2] === APP_LABEL)?.[1] ||
             "";
 
+          // 生イベントを保持（開発者ビュー用）
+          rawEventStore.set(dTag, event as NostrEvent);
+
           try {
             const content = JSON.parse(event.content);
 
@@ -120,6 +125,44 @@ export function loadAllData(pubkey: string): Promise<LoadedData> {
         complete: () => {
           subscription.unsubscribe();
           finalize();
+        },
+      });
+
+    req.emit({
+      kinds: [30078],
+      authors: [pubkey],
+      "#L": [APP_LABEL],
+    });
+    req.over();
+  });
+}
+
+/**
+ * リレーから生イベントを再取得する（開発者ビュー用）
+ * ストアの更新は行わず、取得結果をそのまま返す
+ */
+export function refetchRawEvents(pubkey: string): Promise<NostrEvent[]> {
+  return new Promise((resolve) => {
+    const events: NostrEvent[] = [];
+    const rxNostr = getRxNostr();
+    const req = createRxBackwardReq();
+
+    const timeout = setTimeout(() => {
+      sub.unsubscribe();
+      resolve(events);
+    }, 15_000);
+
+    const sub = rxNostr
+      .use(req)
+      .pipe(uniq())
+      .subscribe({
+        next: (packet) => {
+          events.push(packet.event as NostrEvent);
+        },
+        complete: () => {
+          clearTimeout(timeout);
+          sub.unsubscribe();
+          resolve(events);
         },
       });
 

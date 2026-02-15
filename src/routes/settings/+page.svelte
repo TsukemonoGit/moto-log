@@ -266,4 +266,18 @@
       Nostr kind:30078 でバイク記録を管理
     </p>
   </div>
+
+  <!-- 開発者情報 -->
+  <a
+    href="/dev"
+    class="bg-surface flex items-center justify-between rounded-xl p-4 hover:bg-white/5 transition-colors"
+  >
+    <div>
+      <h3 class="text-sm font-medium">🛠️ 開発者情報</h3>
+      <p class="text-text-muted text-xs mt-0.5">
+        Nostrイベントの生データを閲覧
+      </p>
+    </div>
+    <span class="text-text-muted">→</span>
+  </a>
 </div>

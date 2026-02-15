@@ -281,7 +281,7 @@
     deleting = true;
     try {
       // kind 5 で削除
-      await deleteEvent("", recordId);
+      await deleteEvent(recordId);
 
       // ローカルストアから削除
       if (recordType === "refuel") records.removeRefuel(recordId);

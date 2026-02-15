@@ -1,5 +1,6 @@
 import { getRxNostr } from "./client";
 import type { EventTemplate } from "nostr-tools";
+import { rawEventStore } from "$lib/stores/app.svelte";
 
 const APP_LABEL = "nostr-moto-log";
 
@@ -61,19 +62,18 @@ export async function publishEvent(
 
 /**
  * kind 5 (NIP-09) でイベントを削除する
+ * rawEventStore から event ID を自動取得し、e タグを必ず含める
  */
-export async function deleteEvent(
-  eventId: string,
-  dTag: string,
-): Promise<void> {
+export async function deleteEvent(dTag: string): Promise<void> {
   const nostr = (window as any).nostr;
   if (!nostr) throw new Error("Nostr signer not available.");
 
+  const rawEvent = rawEventStore.get(dTag);
   const tags: string[][] = [
     ["a", `30078:${await nostr.getPublicKey()}:${dTag}`],
   ];
-  if (eventId) {
-    tags.unshift(["e", eventId]);
+  if (rawEvent) {
+    tags.unshift(["e", rawEvent.id]);
   }
 
   const event: EventTemplate = {

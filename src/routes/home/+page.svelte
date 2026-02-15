@@ -1,5 +1,6 @@
 <script lang="ts">
   import { vehicleStore, records } from "$lib/stores/app.svelte";
+  import { QUICK_ACTION_LABELS } from "$lib/constants";
   import {
     calculateFuelEfficiency,
     getAverageFuelEfficiency,
@@ -249,18 +250,7 @@
       return r.isFullTank ? "⛽ 満タン給油" : "⛽ 給油";
     }
     if (item.type === "quick") {
-      const actionLabels: Record<string, string> = {
-        "tire-pressure": "💨 空気圧チェック",
-        "chain-lube": "🔗 チェーン注油",
-        "chain-clean": "🔗 チェーン清掃",
-        "chain-adjust": "🔗 チェーン調整",
-        wash: "🚿 洗車",
-        "oil-check": "🛢 オイル確認",
-        "coolant-check": "💧 冷却水確認",
-        "battery-charge": "🔋 バッテリー充電",
-        custom: "📝 メンテナンス",
-      };
-      return actionLabels[(item.record as any).action] || "🔧 整備";
+      return QUICK_ACTION_LABELS[(item.record as any).action] || "🔧 整備";
     }
     if (item.type === "inspection") {
       const r = item.record as any;

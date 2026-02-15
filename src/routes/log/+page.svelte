@@ -1,6 +1,8 @@
 <script lang="ts">
   import { vehicleStore, records } from "$lib/stores/app.svelte";
+  import { goto } from "$app/navigation";
   import { publishEvent } from "$lib/nostr/publish";
+  import { toastStore } from "$lib/stores/toast.svelte";
   import type { QuickActionType } from "$lib/models/types";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
@@ -10,16 +12,6 @@
   let quickOdometer = $state("");
   let quickNotes = $state("");
   let showExtraInput = $state(false);
-  let toast = $state("");
-  let toastTimeout: ReturnType<typeof setTimeout>;
-
-  function showToast(msg: string) {
-    toast = msg;
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-      toast = "";
-    }, 2000);
-  }
 
   const quickActions: {
     action: QuickActionType;
@@ -80,9 +72,10 @@
         });
       }
 
-      showToast("記録しました! ✅");
+      toastStore.show("記録しました! ✅");
+      setTimeout(() => goto("/home"), 1200);
     } catch {
-      showToast("保存に失敗しました 😢");
+      toastStore.show("保存に失敗しました 😢");
     }
   }
 </script>
@@ -214,12 +207,3 @@
     <span class="text-text-muted">→</span>
   </a>
 </div>
-
-<!-- トースト通知 -->
-{#if toast}
-  <div
-    class="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white shadow-lg"
-  >
-    {toast}
-  </div>
-{/if}

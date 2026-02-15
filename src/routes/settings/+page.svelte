@@ -1,15 +1,56 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { auth, vehicleStore, records } from "$lib/stores/app.svelte";
+  import { getFuelTypeLabel } from "$lib/constants";
+  import { getRxNostr, getDefaultRelays } from "$lib/nostr/client";
+  import type { ConnectionState } from "rx-nostr";
 
-  let relayInput = $state("");
-  let showRelayForm = $state(false);
   let exportStatus = $state("");
 
-  const defaultRelays = [
-    "wss://relay.damus.io",
-    "wss://nos.lol",
-    "wss://relay.nostr.wirednet.jp",
-  ];
+  const relays = getDefaultRelays();
+
+  /** リレーごとの接続状態 */
+  let relayStates = $state<Record<string, ConnectionState>>(
+    Object.fromEntries(
+      relays.map((r) => [r, "initialized" as ConnectionState]),
+    ),
+  );
+
+  onMount(() => {
+    const rxNostr = getRxNostr();
+    const sub = rxNostr
+      .createConnectionStateObservable()
+      .subscribe((packet) => {
+        relayStates[packet.from] = packet.state;
+      });
+    return () => sub.unsubscribe();
+  });
+
+  /** 接続状態のラベルと色 */
+  function connectionBadge(state: ConnectionState): {
+    label: string;
+    class: string;
+  } {
+    switch (state) {
+      case "connected":
+        return { label: "接続中", class: "text-green-400" };
+      case "connecting":
+      case "retrying":
+        return { label: "接続中…", class: "text-yellow-400" };
+      case "waiting-for-retrying":
+        return { label: "再接続待ち", class: "text-yellow-400" };
+      case "dormant":
+        return { label: "待機中", class: "text-text-muted" };
+      case "error":
+        return { label: "エラー", class: "text-red-400" };
+      case "rejected":
+        return { label: "拒否", class: "text-red-400" };
+      case "terminated":
+        return { label: "切断", class: "text-red-400" };
+      default:
+        return { label: "初期化中", class: "text-text-muted" };
+    }
+  }
 
   function handleLogout() {
     if (!confirm("ログアウトしますか？ローカルデータはクリアされます。"))
@@ -20,8 +61,12 @@
   }
 
   function exportData() {
-    const vid = vehicleStore.activeVehicleId;
-    const allRecords = vid ? records.getTimeline(vid) : [];
+    // 全車両の記録をエクスポート
+    const allRecords: Record<string, unknown>[] = [];
+    for (const v of vehicleStore.vehicles) {
+      const timeline = records.getTimeline(v.id);
+      allRecords.push(...timeline.map((r) => ({ ...r })));
+    }
     if (allRecords.length === 0) {
       exportStatus = "エクスポートするデータがありません";
       return;
@@ -54,7 +99,7 @@
     )
       return;
     records.clear();
-    vehicleStore.vehicles.length = 0;
+    vehicleStore.setVehicles([]);
     location.reload();
   }
 </script>
@@ -94,13 +139,7 @@
                   v.maker,
                   v.year ? `${v.year}年` : "",
                   v.displacement ? `${v.displacement}cc` : "",
-                  v.fuelType === "premium"
-                    ? "ハイオク"
-                    : v.fuelType === "diesel"
-                      ? "軽油"
-                      : v.fuelType === "regular"
-                        ? "レギュラー"
-                        : "",
+                  getFuelTypeLabel(v.fuelType) ?? "",
                 ]
                   .filter(Boolean)
                   .join(" / ") || "詳細未設定"}
@@ -162,12 +201,13 @@
   <div class="bg-surface rounded-xl p-4">
     <h3 class="text-text-muted mb-3 text-sm font-medium">📡 リレー</h3>
     <div class="space-y-2">
-      {#each defaultRelays as relay}
+      {#each relays as relay}
+        {@const badge = connectionBadge(relayStates[relay])}
         <div
           class="bg-bg flex items-center justify-between rounded-lg px-3 py-2"
         >
           <span class="text-sm">{relay.replace("wss://", "")}</span>
-          <span class="text-xs text-green-400">接続中</span>
+          <span class="text-xs {badge.class}">{badge.label}</span>
         </div>
       {/each}
     </div>

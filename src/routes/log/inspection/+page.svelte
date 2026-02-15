@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { vehicleStore, records } from "$lib/stores/app.svelte";
   import { publishEvent } from "$lib/nostr/publish";
+  import { toastStore } from "$lib/stores/toast.svelte";
   import type { InspectionType } from "$lib/models/types";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
@@ -11,16 +12,6 @@
   let odometer = $state("");
   let notes = $state("");
   let saving = $state(false);
-  let toast = $state("");
-  let toastTimeout: ReturnType<typeof setTimeout>;
-
-  function showToast(msg: string) {
-    toast = msg;
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-      toast = "";
-    }, 2000);
-  }
 
   const dailyCategories = [
     { key: "brake", label: "ブレーキ" },
@@ -85,9 +76,28 @@
         createdAt: now,
       });
 
-      showToast("全部OK! 記録しました ✅");
+      // ODO 入力があればオドメーター記録も作成
+      if (odometer) {
+        const odoTag = `odo:${vehicleId}:${now}`;
+        await publishEvent(odoTag, "odometer", {
+          v: 1,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+        });
+        records.addOdometer({
+          id: odoTag,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+          createdAt: now,
+        });
+      }
+
+      toastStore.show("全部OK! 記録しました ✅");
+      setTimeout(() => goto("/home"), 1200);
     } catch {
-      showToast("保存に失敗しました 😢");
+      toastStore.show("保存に失敗しました 😢");
     } finally {
       saving = false;
     }
@@ -126,10 +136,29 @@
         createdAt: now,
       });
 
-      showToast("点検記録を保存しました ✅");
+      // ODO 入力があればオドメーター記録も作成
+      if (odometer) {
+        const odoTag = `odo:${vehicleId}:${now}`;
+        await publishEvent(odoTag, "odometer", {
+          v: 1,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+        });
+        records.addOdometer({
+          id: odoTag,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+          createdAt: now,
+        });
+      }
+
+      toastStore.show("点検記録を保存しました ✅");
       issueItems = {};
+      setTimeout(() => goto("/home"), 1200);
     } catch {
-      showToast("保存に失敗しました 😢");
+      toastStore.show("保存に失敗しました 😢");
     } finally {
       saving = false;
     }
@@ -268,11 +297,3 @@
     </button>
   {/if}
 </div>
-
-{#if toast}
-  <div
-    class="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white shadow-lg"
-  >
-    {toast}
-  </div>
-{/if}

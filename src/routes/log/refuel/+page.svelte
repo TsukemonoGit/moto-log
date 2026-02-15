@@ -2,17 +2,11 @@
   import { goto } from "$app/navigation";
   import { vehicleStore, records } from "$lib/stores/app.svelte";
   import { publishEvent } from "$lib/nostr/publish";
+  import { getFuelTypeLabel } from "$lib/constants";
+  import { toastStore } from "$lib/stores/toast.svelte";
 
   const activeVehicle = $derived(vehicleStore.activeVehicle);
-  const fuelTypeLabel = $derived(
-    activeVehicle?.fuelType === "premium"
-      ? "ハイオク"
-      : activeVehicle?.fuelType === "diesel"
-        ? "軽油"
-        : activeVehicle?.fuelType === "regular"
-          ? "レギュラー"
-          : null,
-  );
+  const fuelTypeLabel = $derived(getFuelTypeLabel(activeVehicle?.fuelType));
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
   const lastRefuel = $derived(
@@ -31,7 +25,6 @@
   let notes = $state("");
   let saving = $state(false);
   let error = $state("");
-  let toast = $state("");
 
   // 合計金額と単価の自動計算
   $effect(() => {
@@ -69,7 +62,25 @@
         createdAt: now,
       });
 
-      toast = "給油を記録しました! ⛽";
+      // ODO 入力があればオドメーター記録も作成
+      if (odometer) {
+        const odoTag = `odo:${vehicleId}:${now}`;
+        await publishEvent(odoTag, "odometer", {
+          v: 1,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+        });
+        records.addOdometer({
+          id: odoTag,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+          createdAt: now,
+        });
+      }
+
+      toastStore.show("給油を記録しました! ⛽");
       setTimeout(() => goto("/home"), 1200);
     } catch (e: any) {
       error = e.message || "保存に失敗しました";
@@ -123,7 +134,25 @@
         createdAt: now,
       });
 
-      toast = "給油を記録しました! ⛽";
+      // ODO 入力があればオドメーター記録も作成
+      if (odometer) {
+        const odoTag = `odo:${vehicleId}:${now}`;
+        await publishEvent(odoTag, "odometer", {
+          v: 1,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+        });
+        records.addOdometer({
+          id: odoTag,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+          createdAt: now,
+        });
+      }
+
+      toastStore.show("給油を記録しました! ⛽");
       setTimeout(() => goto("/home"), 1200);
     } catch (e: any) {
       error = e.message || "保存に失敗しました";
@@ -350,12 +379,3 @@
     </button>
   </form>
 </div>
-
-<!-- トースト通知 -->
-{#if toast}
-  <div
-    class="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white shadow-lg"
-  >
-    {toast}
-  </div>
-{/if}

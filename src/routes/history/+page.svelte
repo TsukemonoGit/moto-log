@@ -1,5 +1,6 @@
 <script lang="ts">
   import { vehicleStore, records } from "$lib/stores/app.svelte";
+  import { QUICK_ACTION_LABELS, SHOP_CATEGORY_LABELS } from "$lib/constants";
   import type { RecordType } from "$lib/models/types";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
@@ -17,18 +18,6 @@
     { key: "inspection", icon: "📋", label: "点検" },
     { key: "shop", icon: "🏭", label: "ショップ" },
   ];
-
-  const quickActionLabels: Record<string, string> = {
-    "tire-pressure": "💨 空気圧",
-    "chain-lube": "🔗 チェーン注油",
-    "chain-clean": "🔗 チェーン清掃",
-    "chain-adjust": "⛓️ チェーン調整",
-    wash: "🚿 洗車",
-    "oil-check": "🛢 オイル確認",
-    "coolant-check": "💧 冷却水",
-    "battery-charge": "🔋 バッテリー",
-    custom: "📝 その他",
-  };
 
   const filtered = $derived(() => {
     let items = timeline;
@@ -179,7 +168,7 @@
             ? 'bg-blue-600 text-white'
             : 'bg-surface-light text-text-muted'}"
         >
-          {quickActionLabels[action] ?? action}
+          {QUICK_ACTION_LABELS[action] ?? action}
         </button>
       {/each}
     </div>
@@ -299,7 +288,7 @@
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between">
                       <span class="text-sm font-medium"
-                        >{quickActionLabels[r.action] ?? "整備"}</span
+                        >{QUICK_ACTION_LABELS[r.action] ?? "整備"}</span
                       >
                       <span class="text-text-muted text-xs"
                         >{item.date.slice(5)}</span
@@ -391,12 +380,9 @@
                           <span
                             class="bg-surface-light text-text-muted ml-1 rounded px-1.5 py-0.5 text-xs"
                           >
-                            {{
-                              periodic: "定期",
-                              repair: "修理",
-                              inspection: "車検",
-                              other: "その他",
-                            }[r.category as string] ?? r.category}
+                            {SHOP_CATEGORY_LABELS[
+                              r.category as keyof typeof SHOP_CATEGORY_LABELS
+                            ] ?? r.category}
                           </span>
                         {/if}
                       </span>

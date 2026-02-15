@@ -3,6 +3,11 @@
   import { page } from "$app/state";
   import { records } from "$lib/stores/app.svelte";
   import { publishEvent, deleteEvent } from "$lib/nostr/publish";
+  import {
+    SHOP_WORK_OPTIONS,
+    QUICK_ACTION_TEXT_LABELS,
+    SHOP_CATEGORY_TABS,
+  } from "$lib/constants";
   import type {
     RefuelRecord,
     QuickRecord,
@@ -20,7 +25,6 @@
   let saving = $state(false);
   let deleting = $state(false);
   let error = $state("");
-  let toast = $state("");
 
   // --- 給油記録用の状態 ---
   let refuelDate = $state("");
@@ -35,11 +39,14 @@
   // --- クイック記録用の状態 ---
   let quickDate = $state("");
   let quickAction = $state<QuickActionType>("tire-pressure");
+  let quickOdometer = $state("");
   let quickNotes = $state("");
 
   // --- 点検記録用の状態 ---
   let inspDate = $state("");
   let inspAllOk = $state(true);
+  let inspOdometer = $state("");
+  let inspIssues = $state<{ item: string; status: "warning" | "ng" }[]>([]);
   let inspNotes = $state("");
 
   // --- ショップ記録用の状態 ---
@@ -54,33 +61,6 @@
   let shopNextOdometer = $state("");
   let shopNotes = $state("");
   let shopSelectedWork = $state<Set<string>>(new Set());
-
-  const workOptions = [
-    { key: "oilChange", label: "オイル交換" },
-    { key: "oilFilterChange", label: "オイルフィルター交換" },
-    { key: "airFilterChange", label: "エアフィルター交換" },
-    { key: "sparkPlugChange", label: "スパークプラグ交換" },
-    { key: "brakeFluidChange", label: "ブレーキフルード交換" },
-    { key: "coolantChange", label: "クーラント交換" },
-    { key: "chainAdjust", label: "チェーン調整" },
-    { key: "brakePadReplace", label: "ブレーキパッド交換" },
-    { key: "tireReplaceFront", label: "前タイヤ交換" },
-    { key: "tireReplaceRear", label: "後タイヤ交換" },
-    { key: "batteryReplace", label: "バッテリー交換" },
-    { key: "forkOilChange", label: "フォークオイル交換" },
-  ];
-
-  const quickActionLabels: Record<string, string> = {
-    "tire-pressure": "空気圧チェック",
-    "chain-lube": "チェーン注油",
-    "chain-clean": "チェーン清掃",
-    "chain-adjust": "チェーン調整",
-    wash: "洗車",
-    "oil-check": "オイル確認",
-    "coolant-check": "冷却水確認",
-    "battery-charge": "バッテリー充電",
-    custom: "その他",
-  };
 
   // recordData が変わったらフォーム状態を初期化
   $effect(() => {
@@ -100,11 +80,14 @@
       const r = recordData as QuickRecord;
       quickDate = r.date;
       quickAction = r.action;
+      quickOdometer = r.odometer?.toString() ?? "";
       quickNotes = r.notes ?? "";
     } else if (recordType === "inspection") {
       const r = recordData as InspectionRecord;
       inspDate = r.date;
       inspAllOk = r.allOk;
+      inspOdometer = r.odometer?.toString() ?? "";
+      inspIssues = r.issues ? [...r.issues] : [];
       inspNotes = r.notes ?? "";
     } else if (recordType === "shop") {
       const r = recordData as ShopRecord;
@@ -186,6 +169,7 @@
         date: quickDate,
         action: quickAction,
       };
+      if (quickOdometer) content.odometer = parseFloat(quickOdometer);
       if (quickNotes.trim()) content.notes = quickNotes.trim();
 
       await publishEvent(r.id, "quick", content);
@@ -193,6 +177,7 @@
         ...r,
         date: quickDate,
         action: quickAction,
+        odometer: quickOdometer ? parseFloat(quickOdometer) : undefined,
         notes: quickNotes.trim() || undefined,
       });
       goto("/history");
@@ -208,14 +193,16 @@
     saving = true;
     error = "";
     try {
+      const issues = inspAllOk ? [] : inspIssues;
       const content: Record<string, unknown> = {
         v: 1,
         vehicleId: r.vehicleId,
         date: inspDate,
         type: r.type,
         allOk: inspAllOk,
-        issues: inspAllOk ? [] : r.issues,
+        issues,
       };
+      if (inspOdometer) content.odometer = parseFloat(inspOdometer);
       if (inspNotes.trim()) content.notes = inspNotes.trim();
 
       await publishEvent(r.id, "inspection", content);
@@ -223,7 +210,8 @@
         ...r,
         date: inspDate,
         allOk: inspAllOk,
-        issues: inspAllOk ? [] : r.issues,
+        issues,
+        odometer: inspOdometer ? parseFloat(inspOdometer) : undefined,
         notes: inspNotes.trim() || undefined,
       });
       goto("/history");
@@ -474,7 +462,7 @@
         <div>
           <label class="text-text-muted mb-2 block text-sm">種類</label>
           <div class="flex flex-wrap gap-2">
-            {#each Object.entries(quickActionLabels) as [key, label]}
+            {#each Object.entries(QUICK_ACTION_TEXT_LABELS) as [key, label]}
               <button
                 type="button"
                 onclick={() => {
@@ -489,6 +477,18 @@
               </button>
             {/each}
           </div>
+        </div>
+        <div>
+          <label for="quickOdometer" class="text-text-muted mb-1 block text-sm"
+            >走行距離 (km)</label
+          >
+          <input
+            id="quickOdometer"
+            type="number"
+            bind:value={quickOdometer}
+            placeholder="12345"
+            class="bg-surface-light w-full rounded-lg px-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
         <div>
           <label for="quickNotes" class="text-text-muted mb-1 block text-sm"
@@ -543,6 +543,58 @@
             ></span>
           </button>
         </label>
+
+        {#if !inspAllOk && inspIssues.length > 0}
+          <div>
+            <label class="text-text-muted mb-2 block text-sm">指摘項目</label>
+            {#each inspIssues as issue, i}
+              <div
+                class="bg-surface-light mb-2 flex items-center gap-2 rounded-lg px-3 py-2"
+              >
+                <span class="flex-1 text-sm">{issue.item}</span>
+                <select
+                  value={issue.status}
+                  onchange={(e) => {
+                    inspIssues = inspIssues.map((x, j) =>
+                      j === i
+                        ? {
+                            ...x,
+                            status: (e.target as HTMLSelectElement).value as
+                              | "warning"
+                              | "ng",
+                          }
+                        : x,
+                    );
+                  }}
+                  class="bg-surface rounded px-2 py-1 text-xs text-white"
+                >
+                  <option value="warning">⚠️ 注意</option>
+                  <option value="ng">❌ NG</option>
+                </select>
+                <button
+                  type="button"
+                  onclick={() => {
+                    inspIssues = inspIssues.filter((_, j) => j !== i);
+                  }}
+                  class="text-text-muted hover:text-red-400 text-xs">🗑</button
+                >
+              </div>
+            {/each}
+          </div>
+        {/if}
+
+        <div>
+          <label for="inspOdometer" class="text-text-muted mb-1 block text-sm"
+            >走行距離 (km)</label
+          >
+          <input
+            id="inspOdometer"
+            type="number"
+            bind:value={inspOdometer}
+            placeholder="12345"
+            class="bg-surface-light w-full rounded-lg px-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
         <div>
           <label for="inspNotes" class="text-text-muted mb-1 block text-sm"
             >メモ</label
@@ -570,7 +622,7 @@
           />
         </div>
         <div class="bg-surface flex rounded-lg p-1">
-          {#each [["regular", "定期"], ["repair", "修理"], ["shaken", "車検"], ["custom", "カスタム"]] as [key, label]}
+          {#each SHOP_CATEGORY_TABS as [key, label]}
             <button
               type="button"
               onclick={() => {
@@ -588,7 +640,7 @@
         <div>
           <p class="text-text-muted mb-2 text-sm">やった作業:</p>
           <div class="flex flex-wrap gap-2">
-            {#each workOptions as opt}
+            {#each SHOP_WORK_OPTIONS as opt}
               <button
                 type="button"
                 onclick={() => toggleShopWork(opt.key)}

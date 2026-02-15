@@ -2,6 +2,8 @@
   import { goto } from "$app/navigation";
   import { vehicleStore, records } from "$lib/stores/app.svelte";
   import { publishEvent } from "$lib/nostr/publish";
+  import { SHOP_WORK_OPTIONS, SHOP_CATEGORY_TABS } from "$lib/constants";
+  import { toastStore } from "$lib/stores/toast.svelte";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
 
@@ -15,21 +17,6 @@
   let notes = $state("");
   let saving = $state(false);
   let error = $state("");
-
-  const workOptions = [
-    { key: "oilChange", label: "オイル交換" },
-    { key: "oilFilterChange", label: "オイルフィルター交換" },
-    { key: "airFilterChange", label: "エアフィルター交換" },
-    { key: "sparkPlugChange", label: "スパークプラグ交換" },
-    { key: "brakeFluidChange", label: "ブレーキフルード交換" },
-    { key: "coolantChange", label: "クーラント交換" },
-    { key: "chainAdjust", label: "チェーン調整" },
-    { key: "brakePadReplace", label: "ブレーキパッド交換" },
-    { key: "tireReplaceFront", label: "前タイヤ交換" },
-    { key: "tireReplaceRear", label: "後タイヤ交換" },
-    { key: "batteryReplace", label: "バッテリー交換" },
-    { key: "forkOilChange", label: "フォークオイル交換" },
-  ];
 
   let selectedWork = $state<Set<string>>(new Set());
 
@@ -80,7 +67,26 @@
         createdAt: now,
       });
 
-      goto("/home");
+      // ODO 入力があればオドメーター記録も作成
+      if (odometer) {
+        const odoTag = `odo:${vehicleId}:${now}`;
+        await publishEvent(odoTag, "odometer", {
+          v: 1,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+        });
+        records.addOdometer({
+          id: odoTag,
+          vehicleId,
+          date,
+          odometer: parseFloat(odometer),
+          createdAt: now,
+        });
+      }
+
+      toastStore.show("ショップ整備を記録しました ✅");
+      setTimeout(() => goto("/home"), 1200);
     } catch (e: any) {
       error = e.message || "保存に失敗しました";
     } finally {
@@ -124,7 +130,7 @@
 
     <!-- カテゴリ -->
     <div class="bg-surface flex rounded-lg p-1">
-      {#each [["regular", "定期"], ["repair", "修理"], ["shaken", "車検"], ["custom", "カスタム"]] as [key, label]}
+      {#each SHOP_CATEGORY_TABS as [key, label]}
         <button
           type="button"
           onclick={() => {
@@ -146,7 +152,7 @@
         やってもらった作業 (該当をタップ):
       </p>
       <div class="flex flex-wrap gap-2">
-        {#each workOptions as opt}
+        {#each SHOP_WORK_OPTIONS as opt}
           <button
             type="button"
             onclick={() => toggleWork(opt.key)}

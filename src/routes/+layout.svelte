@@ -6,6 +6,7 @@
   import { auth, vehicleStore, records } from "$lib/stores/app.svelte";
   import { loadAllData } from "$lib/nostr/subscribe";
   import { getRxNostr } from "$lib/nostr/client";
+  import Toast from "$lib/components/Toast.svelte";
 
   let { children } = $props();
   let showVehicleMenu = $state(false);
@@ -168,3 +169,5 @@
     </nav>
   </div>
 {/if}
+
+<Toast />

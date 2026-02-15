@@ -29,7 +29,34 @@ export async function publishEvent(
 
   const signed = await nostr.signEvent(event);
   const rxNostr = getRxNostr();
-  rxNostr.send(signed);
+
+  // 少なくとも 1 つのリレーから OK を待つ (10秒タイムアウト)
+  await new Promise<void>((resolve, reject) => {
+    let resolved = false;
+    const sub = rxNostr.send(signed).subscribe({
+      next: (result) => {
+        if (!resolved && result.ok) {
+          resolved = true;
+          sub.unsubscribe();
+          resolve();
+        }
+      },
+      complete: () => {
+        if (!resolved) {
+          resolved = true;
+          // 全リレー応答済みだが OK なし → それでも resolve (fire-and-forget 的)
+          resolve();
+        }
+      },
+    });
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        sub.unsubscribe();
+        resolve(); // タイムアウトでも reject しない (UX 重視)
+      }
+    }, 10_000);
+  });
 }
 
 /**
@@ -42,17 +69,46 @@ export async function deleteEvent(
   const nostr = (window as any).nostr;
   if (!nostr) throw new Error("Nostr signer not available.");
 
+  const tags: string[][] = [
+    ["a", `30078:${await nostr.getPublicKey()}:${dTag}`],
+  ];
+  if (eventId) {
+    tags.unshift(["e", eventId]);
+  }
+
   const event: EventTemplate = {
     kind: 5,
     content: "deleted",
     created_at: Math.floor(Date.now() / 1000),
-    tags: [
-      ["e", eventId],
-      ["a", `30078:${await nostr.getPublicKey()}:${dTag}`],
-    ],
+    tags,
   };
 
   const signed = await nostr.signEvent(event);
   const rxNostr = getRxNostr();
-  rxNostr.send(signed);
+
+  await new Promise<void>((resolve) => {
+    let resolved = false;
+    const sub = rxNostr.send(signed).subscribe({
+      next: (result) => {
+        if (!resolved && result.ok) {
+          resolved = true;
+          sub.unsubscribe();
+          resolve();
+        }
+      },
+      complete: () => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      },
+    });
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        sub.unsubscribe();
+        resolve();
+      }
+    }, 10_000);
+  });
 }

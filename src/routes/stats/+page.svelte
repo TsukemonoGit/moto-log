@@ -1,5 +1,6 @@
 <script lang="ts">
   import { vehicleStore, records } from "$lib/stores/app.svelte";
+  import { QUICK_ACTION_LABELS } from "$lib/constants";
   import {
     calculateFuelEfficiency,
     getAverageFuelEfficiency,
@@ -67,18 +68,6 @@
     }
     return map;
   });
-
-  const quickActionLabels: Record<string, string> = {
-    "tire-pressure": "💨 空気圧",
-    "chain-lube": "🔗 チェーン注油",
-    "chain-clean": "🔗 チェーン清掃",
-    "chain-adjust": "⛓️ チェーン調整",
-    wash: "🚿 洗車",
-    "oil-check": "🛢 オイル確認",
-    "coolant-check": "💧 冷却水",
-    "battery-charge": "🔋 バッテリー",
-    custom: "📝 その他",
-  };
 
   // 年間の整備コスト (ショップ + 給油)
   const thisYear = $derived(new Date().getFullYear().toString());
@@ -319,7 +308,9 @@
           <div class="flex flex-wrap gap-2">
             {#each [...monthlyQuickCounts().entries()] as [action, count]}
               <div class="bg-bg rounded-lg px-3 py-2 text-center">
-                <div class="text-xs">{quickActionLabels[action] ?? action}</div>
+                <div class="text-xs">
+                  {QUICK_ACTION_LABELS[action] ?? action}
+                </div>
                 <div class="text-lg font-bold">{count}回</div>
               </div>
             {/each}
@@ -348,7 +339,7 @@
               {@const width = Math.min((count / maxCount) * 100, 100)}
               <div class="flex items-center gap-2 text-xs">
                 <span class="w-24 truncate"
-                  >{quickActionLabels[action] ?? action}</span
+                  >{QUICK_ACTION_LABELS[action] ?? action}</span
                 >
                 <div
                   class="h-4 flex-1 overflow-hidden rounded-full bg-slate-700"

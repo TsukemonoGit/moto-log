@@ -37,6 +37,26 @@ export function loadAllData(pubkey: string): Promise<LoadedData> {
     const rxNostr = getRxNostr();
     const req = createRxBackwardReq();
 
+    // タイムアウト: 15秒以内にリレーから応答がなければ取得済みデータで resolve
+    const timeout = setTimeout(() => {
+      console.warn(
+        "loadAllData: timeout after 15s, resolving with partial data",
+      );
+      subscription.unsubscribe();
+      finalize();
+    }, 15_000);
+
+    function finalize() {
+      clearTimeout(timeout);
+      // 日付順でソート
+      data.refuels.sort((a, b) => (a.date > b.date ? -1 : 1));
+      data.quickRecords.sort((a, b) => (a.date > b.date ? -1 : 1));
+      data.inspections.sort((a, b) => (a.date > b.date ? -1 : 1));
+      data.shopRecords.sort((a, b) => (a.date > b.date ? -1 : 1));
+      data.odometerRecords.sort((a, b) => (a.date > b.date ? -1 : 1));
+      resolve(data);
+    }
+
     const subscription = rxNostr
       .use(req)
       .pipe(uniq())
@@ -98,13 +118,8 @@ export function loadAllData(pubkey: string): Promise<LoadedData> {
           }
         },
         complete: () => {
-          // 日付順でソート
-          data.refuels.sort((a, b) => (a.date > b.date ? -1 : 1));
-          data.quickRecords.sort((a, b) => (a.date > b.date ? -1 : 1));
-          data.inspections.sort((a, b) => (a.date > b.date ? -1 : 1));
-          data.shopRecords.sort((a, b) => (a.date > b.date ? -1 : 1));
-          data.odometerRecords.sort((a, b) => (a.date > b.date ? -1 : 1));
-          resolve(data);
+          subscription.unsubscribe();
+          finalize();
         },
       });
 

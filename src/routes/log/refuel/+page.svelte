@@ -12,12 +12,15 @@
   let fuelAmount = $state("");
   let isFullTank = $state(true);
   let totalCost = $state("");
-  let pricePerLiter = $state("");
+  // 前回の単価を自動プリフィル
+  let pricePerLiter = $state(lastRefuel?.pricePerLiter?.toString() ?? "");
   let odometer = $state("");
-  let station = $state("");
+  // 前回のスタンドを自動プリフィル
+  let station = $state(lastRefuel?.station ?? "");
   let notes = $state("");
   let saving = $state(false);
   let error = $state("");
+  let toast = $state("");
 
   // 合計金額と単価の自動計算
   $effect(() => {
@@ -55,7 +58,8 @@
         createdAt: now,
       });
 
-      goto("/home");
+      toast = "給油を記録しました! ⛽";
+      setTimeout(() => goto("/home"), 1200);
     } catch (e: any) {
       error = e.message || "保存に失敗しました";
     } finally {
@@ -108,7 +112,8 @@
         createdAt: now,
       });
 
-      goto("/home");
+      toast = "給油を記録しました! ⛽";
+      setTimeout(() => goto("/home"), 1200);
     } catch (e: any) {
       error = e.message || "保存に失敗しました";
     } finally {
@@ -328,3 +333,12 @@
     </button>
   </form>
 </div>
+
+<!-- トースト通知 -->
+{#if toast}
+  <div
+    class="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white shadow-lg"
+  >
+    {toast}
+  </div>
+{/if}

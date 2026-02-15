@@ -6,6 +6,8 @@
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
 
   let date = $state(new Date().toISOString().slice(0, 10));
+  let quickOdometer = $state("");
+  let showOdoInput = $state(false);
   let toast = $state("");
   let toastTimeout: ReturnType<typeof setTimeout>;
 
@@ -36,12 +38,13 @@
     const now = Math.floor(Date.now() / 1000);
     const dTag = `quick:${vehicleId}:${now}`;
 
-    const content = {
+    const content: Record<string, unknown> = {
       v: 1,
       vehicleId,
       date,
       action,
     };
+    if (quickOdometer) content.odometer = parseFloat(quickOdometer);
 
     try {
       await publishEvent(dTag, "quick", content);
@@ -52,6 +55,26 @@
         action,
         createdAt: now,
       });
+
+      // ODO 入力があればオドメーター記録も作成
+      if (quickOdometer) {
+        const odoTag = `odo:${vehicleId}:${now}`;
+        const odoContent = {
+          v: 1,
+          vehicleId,
+          date,
+          odometer: parseFloat(quickOdometer),
+        };
+        await publishEvent(odoTag, "odometer", odoContent);
+        records.addOdometer({
+          id: odoTag,
+          vehicleId,
+          date,
+          odometer: parseFloat(quickOdometer),
+          createdAt: now,
+        });
+      }
+
       showToast("記録しました! ✅");
     } catch {
       showToast("保存に失敗しました 😢");
@@ -93,6 +116,27 @@
     <h3 class="text-text-muted mb-3 text-sm font-medium">
       ワンタップ整備 (タップで即記録!)
     </h3>
+
+    <!-- ODO 入力トグル -->
+    <div class="mb-2">
+      <button
+        type="button"
+        onclick={() => (showOdoInput = !showOdoInput)}
+        class="text-text-muted hover:text-text text-xs transition-colors"
+      >
+        📏 ODO も記録する {showOdoInput ? "▲" : "▼"}
+      </button>
+      {#if showOdoInput}
+        <input
+          type="number"
+          bind:value={quickOdometer}
+          placeholder="ODO (km)"
+          inputmode="numeric"
+          class="bg-surface-light mt-1 w-full rounded-lg px-4 py-2 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      {/if}
+    </div>
+
     <div class="grid grid-cols-4 gap-2">
       {#each quickActions as qa}
         <button

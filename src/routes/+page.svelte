@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { auth, vehicleStore, records } from "$lib/stores/app.svelte";
   import { loadAllData } from "$lib/nostr/subscribe";
@@ -8,36 +7,6 @@
   let loggingIn = $state(false);
   let error = $state("");
   let privacyAcknowledged = $state(false);
-
-  onMount(() => {
-    // nostr-login のイベントをリッスン
-    const handler = ((e: Event) =>
-      handleNostrLogin(e as CustomEvent)) as EventListener;
-    document.addEventListener("nlAuth", handler);
-
-    // @konemono/nostr-login を動的インポート
-    import("@konemono/nostr-login")
-      .then(({ init }) => {
-        init({
-          darkMode: true,
-          title: "Nostr Moto Log",
-          perms: "sign_event:30078,sign_event:5",
-        });
-      })
-      .catch((e) => console.error("Failed to init nostr-login:", e));
-
-    return () => {
-      document.removeEventListener("nlAuth", handler);
-    };
-  });
-
-  async function handleNostrLogin(e: CustomEvent) {
-    if (e.detail.type === "login" || e.detail.type === "signup") {
-      await doLogin();
-    } else if (e.detail.type === "logout") {
-      auth.logout();
-    }
-  }
 
   async function doLogin() {
     const nostr = (window as any).nostr;

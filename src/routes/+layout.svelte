@@ -1,10 +1,15 @@
 <script lang="ts">
   import "../app.css";
-  import { auth, vehicleStore } from "$lib/stores/app.svelte";
+  import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
+  import { auth, vehicleStore, records } from "$lib/stores/app.svelte";
+  import { loadAllData } from "$lib/nostr/subscribe";
+  import { getRxNostr } from "$lib/nostr/client";
 
   let { children } = $props();
   let showVehicleMenu = $state(false);
+  let initializing = $state(true);
 
   const navItems = [
     { href: "/home", label: "ホーム", icon: "🏠" },
@@ -12,6 +17,71 @@
     { href: "/history", label: "履歴", icon: "📋" },
     { href: "/stats", label: "統計", icon: "📊" },
   ];
+
+  /** nlAuth イベント経由のログイン処理 */
+  async function handleAuthLogin() {
+    const nostr = (window as any).nostr;
+    if (!nostr) return;
+
+    try {
+      const pubkey = await nostr.getPublicKey();
+      auth.login(pubkey);
+      getRxNostr();
+
+      records.setLoading(true);
+      const data = await loadAllData(pubkey);
+      vehicleStore.setVehicles(data.vehicles);
+      records.setAll(data);
+      records.setLoading(false);
+
+      if (data.vehicles.length === 0) {
+        goto("/vehicle");
+      } else if (page.url.pathname === "/") {
+        goto("/home");
+      }
+    } catch (e) {
+      console.error("Auto login failed:", e);
+    }
+  }
+
+  onMount(() => {
+    // nostr-login のイベントをリッスン (全ページ共通)
+    const handler = ((e: Event) => {
+      const ce = e as CustomEvent;
+      if (ce.detail.type === "login" || ce.detail.type === "signup") {
+        handleAuthLogin();
+      } else if (ce.detail.type === "logout") {
+        auth.logout();
+        goto("/");
+      }
+    }) as EventListener;
+    document.addEventListener("nlAuth", handler);
+
+    // @konemono/nostr-login を動的インポート (全ページ共通)
+    import("@konemono/nostr-login")
+      .then(({ init }) => {
+        init({
+          darkMode: true,
+          title: "Nostr Moto Log",
+          perms: "sign_event:30078,sign_event:5",
+        });
+      })
+      .catch((e) => console.error("Failed to init nostr-login:", e))
+      .finally(() => {
+        initializing = false;
+      });
+
+    return () => {
+      document.removeEventListener("nlAuth", handler);
+    };
+  });
+
+  // 未認証で / 以外にいる場合はリダイレクト
+  $effect(() => {
+    if (!initializing && !auth.loggedIn && page.url.pathname !== "/") {
+      goto("/");
+    }
+  });
 </script>
 
 {#if !auth.loggedIn}

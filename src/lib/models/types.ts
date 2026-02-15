@@ -16,7 +16,7 @@ export interface RefuelRecord {
   id: string; // d-tag
   vehicleId: string;
   date: string; // YYYY-MM-DD
-  fuelAmount: number; // L
+  fuelAmount?: number; // L (任意: 量がわからなくても記録可能)
   isFullTank: boolean;
   odometer?: number; // km
   pricePerLiter?: number; // ¥/L

@@ -89,7 +89,7 @@
     if (recordType === "refuel") {
       const r = recordData as RefuelRecord;
       refuelDate = r.date;
-      refuelAmount = r.fuelAmount.toString();
+      refuelAmount = r.fuelAmount?.toString() ?? "";
       refuelFullTank = r.isFullTank;
       refuelTotalCost = r.totalCost?.toString() ?? "";
       refuelPricePerLiter = r.pricePerLiter?.toString() ?? "";
@@ -129,9 +129,9 @@
 
   async function saveRefuel() {
     const r = recordData as RefuelRecord;
-    const amount = parseFloat(refuelAmount);
-    if (isNaN(amount) || amount <= 0) {
-      error = "給油量を入力してください";
+    const amount = refuelAmount ? parseFloat(refuelAmount) : undefined;
+    if (refuelAmount && (isNaN(amount!) || amount! <= 0)) {
+      error = "給油量の値が不正です";
       return;
     }
     saving = true;
@@ -141,9 +141,9 @@
         v: 1,
         vehicleId: r.vehicleId,
         date: refuelDate,
-        fuelAmount: amount,
         isFullTank: refuelFullTank,
       };
+      if (amount != null) content.fuelAmount = amount;
       if (refuelOdometer) content.odometer = parseFloat(refuelOdometer);
       if (refuelPricePerLiter)
         content.pricePerLiter = parseFloat(refuelPricePerLiter);
@@ -361,7 +361,7 @@
         </div>
         <div>
           <label for="refuelAmount" class="text-text-muted mb-1 block text-sm"
-            >給油量 (L) *</label
+            >給油量 (L)</label
           >
           <input
             id="refuelAmount"
@@ -369,9 +369,9 @@
             bind:value={refuelAmount}
             step="0.01"
             min="0"
+            placeholder="わからなければ空欄で OK"
             inputmode="decimal"
-            required
-            class="bg-surface-light w-full rounded-lg px-4 py-3 text-lg text-white outline-none focus:ring-2 focus:ring-blue-500"
+            class="bg-surface-light w-full rounded-lg px-4 py-3 text-lg text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <label class="flex items-center justify-between">

@@ -27,16 +27,10 @@
     }
   });
 
-  async function save() {
-    const amount = parseFloat(fuelAmount);
-    if (isNaN(amount) || amount <= 0) {
-      error = "給油量を入力してください";
-      return;
-    }
-
+  /** 満タンにした！ワンタップ保存 */
+  async function quickFullTank() {
     saving = true;
     error = "";
-
     try {
       const now = Math.floor(Date.now() / 1000);
       const dTag = `refuel:${vehicleId}:${now}`;
@@ -45,10 +39,53 @@
         v: 1,
         vehicleId,
         date,
-        fuelAmount: amount,
+        isFullTank: true,
+      };
+
+      if (odometer) content.odometer = parseFloat(odometer);
+
+      await publishEvent(dTag, "refuel", content);
+
+      records.addRefuel({
+        id: dTag,
+        vehicleId,
+        date,
+        isFullTank: true,
+        odometer: odometer ? parseFloat(odometer) : undefined,
+        createdAt: now,
+      });
+
+      goto("/home");
+    } catch (e: any) {
+      error = e.message || "保存に失敗しました";
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function save() {
+    saving = true;
+    error = "";
+
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const dTag = `refuel:${vehicleId}:${now}`;
+
+      const amount = fuelAmount ? parseFloat(fuelAmount) : undefined;
+      if (fuelAmount && (isNaN(amount!) || amount! <= 0)) {
+        error = "給油量の値が不正です";
+        saving = false;
+        return;
+      }
+
+      const content: Record<string, unknown> = {
+        v: 1,
+        vehicleId,
+        date,
         isFullTank,
       };
 
+      if (amount != null) content.fuelAmount = amount;
       if (odometer) content.odometer = parseFloat(odometer);
       if (pricePerLiter) content.pricePerLiter = parseFloat(pricePerLiter);
       if (totalCost) content.totalCost = parseInt(totalCost);
@@ -86,6 +123,27 @@
     <h2 class="text-xl font-bold">⛽ 給油記録</h2>
   </div>
 
+  <!-- ワンタップ: 満タンにした！ -->
+  <button
+    type="button"
+    onclick={quickFullTank}
+    disabled={saving}
+    class="bg-primary hover:bg-primary-dark flex w-full items-center justify-center gap-3 rounded-xl py-5 text-lg font-bold text-white shadow-lg transition-colors disabled:opacity-50"
+  >
+    <span class="text-3xl">⛽</span>
+    <span>{saving ? "保存中..." : "満タンにした！"}</span>
+  </button>
+  <p class="text-text-muted text-center text-xs">
+    量がわからなくても OK。タップだけで給油を記録
+  </p>
+
+  <!-- 区切り線 -->
+  <div class="flex items-center gap-3">
+    <div class="h-px flex-1 bg-white/10"></div>
+    <span class="text-text-muted text-xs">詳しく記録する場合</span>
+    <div class="h-px flex-1 bg-white/10"></div>
+  </div>
+
   <form
     onsubmit={(e) => {
       e.preventDefault();
@@ -105,10 +163,10 @@
       />
     </div>
 
-    <!-- 給油量 (必須) -->
+    <!-- 給油量 (任意) -->
     <div>
       <label for="fuelAmount" class="text-text-muted mb-1 block text-sm"
-        >給油量 (L) *</label
+        >給油量 (L)</label
       >
       <input
         id="fuelAmount"
@@ -116,9 +174,8 @@
         bind:value={fuelAmount}
         step="0.01"
         min="0"
-        placeholder="10.5"
+        placeholder="わからなければ空欄で OK"
         inputmode="decimal"
-        required
         class="bg-surface-light w-full rounded-lg px-4 py-3 text-lg text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
@@ -264,10 +321,10 @@
 
     <button
       type="submit"
-      disabled={saving || !fuelAmount}
-      class="bg-primary hover:bg-primary-dark w-full rounded-lg py-3 font-bold text-white transition-colors disabled:opacity-50"
+      disabled={saving}
+      class="bg-surface-light hover:bg-surface w-full rounded-lg py-3 font-bold text-white transition-colors disabled:opacity-50"
     >
-      {saving ? "保存中..." : "⛽ 記録する"}
+      {saving ? "保存中..." : "📝 詳細を記録する"}
     </button>
   </form>
 </div>

@@ -37,9 +37,9 @@
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   });
 
-  // 総給油量
+  // 総給油量 (fuelAmount が記録されているもの)
   const totalFuel = $derived(
-    vehicleRefuels.reduce((sum, r) => sum + r.fuelAmount, 0),
+    vehicleRefuels.reduce((sum, r) => sum + (r.fuelAmount ?? 0), 0),
   );
 
   // 給油回数

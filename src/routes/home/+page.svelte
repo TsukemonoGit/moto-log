@@ -7,6 +7,7 @@
     getBestWorstFuelEfficiency,
     getTotalFuelCost,
     getTotalDistance,
+    estimateRemainingFuel,
   } from "$lib/services/fuel-calc";
 
   const vehicle = $derived(vehicleStore.activeVehicle);
@@ -22,14 +23,24 @@
   const totalCost = $derived(getTotalFuelCost(vehicleRefuels));
   const totalDistance = $derived(getTotalDistance(vehicleRefuels));
 
+  // 推定残燃料
+  const remainingFuel = $derived(
+    vehicle?.fuelTankCapacity
+      ? estimateRemainingFuel(vehicleRefuels, vehicle.fuelTankCapacity, avgFuel)
+      : null,
+  );
+
   const timeline = $derived(records.getTimeline(vehicleId).slice(0, 5));
 
   function formatRecordLine(item: (typeof timeline)[number]): string {
     if (item.type === "refuel") {
       const r = item.record as any;
-      let line = `⛽ ${r.fuelAmount}L`;
-      if (r.totalCost) line += ` ¥${r.totalCost.toLocaleString()}`;
-      return line;
+      if (r.fuelAmount != null) {
+        let line = `⛽ ${r.fuelAmount}L`;
+        if (r.totalCost) line += ` ¥${r.totalCost.toLocaleString()}`;
+        return line;
+      }
+      return r.isFullTank ? "⛽ 満タン給油" : "⛽ 給油";
     }
     if (item.type === "quick") {
       const actionLabels: Record<string, string> = {
@@ -101,6 +112,46 @@
       </p>
     {/if}
   </div>
+
+  <!-- 推定残燃料 -->
+  {#if remainingFuel}
+    <div class="bg-surface rounded-xl p-4">
+      <h2 class="text-text-muted mb-3 text-sm font-medium">🔋 推定残燃料</h2>
+      <div class="text-center">
+        <div
+          class="text-2xl font-bold {remainingFuel.percentage <= 20
+            ? 'text-red-400'
+            : remainingFuel.percentage <= 40
+              ? 'text-amber-400'
+              : 'text-green-400'}"
+        >
+          {remainingFuel.remaining} L
+        </div>
+        <div class="text-text-muted text-xs">
+          / {vehicle?.fuelTankCapacity} L ({remainingFuel.percentage}%)
+        </div>
+      </div>
+      <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-700">
+        <div
+          class="h-full rounded-full transition-all {remainingFuel.percentage <=
+          20
+            ? 'bg-red-500'
+            : remainingFuel.percentage <= 40
+              ? 'bg-amber-500'
+              : 'bg-green-500'}"
+          style="width: {remainingFuel.percentage}%"
+        ></div>
+      </div>
+      {#if avgFuel}
+        <div class="text-text-muted mt-2 text-center text-xs">
+          航続可能: 約 {Math.round(remainingFuel.remaining * avgFuel)} km
+        </div>
+      {/if}
+      <p class="text-text-muted mt-1 text-center text-xs opacity-60">
+        ※ 平均燃費からの推定値です
+      </p>
+    </div>
+  {/if}
 
   <!-- 距離・コスト -->
   {#if totalDistance != null || totalCost > 0}

@@ -18,7 +18,12 @@
   function getDescription(item: (typeof timeline)[number]): string {
     if (item.type === "refuel") {
       const r = item.record as any;
-      let desc = `給油 ${r.fuelAmount}L`;
+      let desc =
+        r.fuelAmount != null
+          ? `給油 ${r.fuelAmount}L`
+          : r.isFullTank
+            ? "満タン給油"
+            : "給油";
       if (r.totalCost) desc += ` ¥${r.totalCost.toLocaleString()}`;
       if (r.odometer) desc += ` (${r.odometer.toLocaleString()} km)`;
       return desc;

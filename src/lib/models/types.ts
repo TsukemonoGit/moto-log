@@ -44,7 +44,6 @@ export interface QuickRecord {
   date: string;
   action: QuickActionType;
   odometer?: number;
-  details?: Record<string, unknown>;
   notes?: string;
   createdAt: number;
 }
@@ -55,7 +54,6 @@ export type InspectionType = "daily" | "weekly" | "monthly";
 export interface InspectionIssue {
   item: string;
   status: "warning" | "ng";
-  note?: string;
 }
 
 export interface InspectionRecord {
@@ -94,7 +92,6 @@ export interface OdometerRecord {
   vehicleId: string;
   date: string;
   odometer: number;
-  notes?: string;
   createdAt: number;
 }
 

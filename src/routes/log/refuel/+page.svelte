@@ -3,6 +3,17 @@
   import { vehicleStore, records } from "$lib/stores/app.svelte";
   import { publishEvent } from "$lib/nostr/publish";
 
+  const activeVehicle = $derived(vehicleStore.activeVehicle);
+  const fuelTypeLabel = $derived(
+    activeVehicle?.fuelType === "premium"
+      ? "ハイオク"
+      : activeVehicle?.fuelType === "diesel"
+        ? "軽油"
+        : activeVehicle?.fuelType === "regular"
+          ? "レギュラー"
+          : null,
+  );
+
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
   const lastRefuel = $derived(
     records.refuels.filter((r) => r.vehicleId === vehicleId)[0],
@@ -127,6 +138,12 @@
     <a href="/log" class="text-text-muted hover:text-text">←</a>
     <h2 class="text-xl font-bold">⛽ 給油記録</h2>
   </div>
+
+  {#if fuelTypeLabel}
+    <div class="bg-surface rounded-lg px-3 py-2 text-sm">
+      ⛽ この車両は <span class="text-primary font-bold">{fuelTypeLabel}</span> です
+    </div>
+  {/if}
 
   <!-- ワンタップ: 満タンにした！ -->
   <button

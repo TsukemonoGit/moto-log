@@ -266,6 +266,16 @@
                         {/if}
                       </div>
                     {/if}
+                    {#if r.station}
+                      <div class="text-text-muted mt-0.5 text-xs">
+                        🏭 {r.station}
+                      </div>
+                    {/if}
+                    {#if r.notes}
+                      <div class="text-text-muted mt-0.5 text-xs">
+                        📝 {r.notes}
+                      </div>
+                    {/if}
                   </div>
                   <span class="text-text-muted text-xs">✏️</span>
                 </div>
@@ -333,8 +343,25 @@
                       >
                     </div>
                     {#if !r.allOk && r.issues?.length}
-                      <div class="text-text-muted mt-0.5 text-xs">
-                        {r.issues.map((i: any) => i.item).join(", ")}
+                      <div
+                        class="text-text-muted mt-0.5 flex flex-wrap gap-1 text-xs"
+                      >
+                        {#each r.issues as issue}
+                          <span
+                            class="inline-flex items-center gap-0.5 {issue.status ===
+                            'ng'
+                              ? 'text-red-400'
+                              : issue.status === 'caution'
+                                ? 'text-yellow-400'
+                                : 'text-text-muted'}"
+                          >
+                            {issue.status === "ng"
+                              ? "❌"
+                              : issue.status === "caution"
+                                ? "⚠️"
+                                : "❓"}{issue.item}
+                          </span>
+                        {/each}
                       </div>
                     {/if}
                     {#if r.notes}
@@ -360,6 +387,18 @@
                             >@{r.shopName}</span
                           >
                         {/if}
+                        {#if r.category}
+                          <span
+                            class="bg-surface-light text-text-muted ml-1 rounded px-1.5 py-0.5 text-xs"
+                          >
+                            {{
+                              periodic: "定期",
+                              repair: "修理",
+                              inspection: "車検",
+                              other: "その他",
+                            }[r.category as string] ?? r.category}
+                          </span>
+                        {/if}
                       </span>
                       <span class="text-text-muted text-xs"
                         >{item.date.slice(5)}</span
@@ -383,6 +422,11 @@
                         <span>次回: {r.nextDate}</span>
                       {/if}
                     </div>
+                    {#if r.notes}
+                      <div class="text-text-muted mt-0.5 text-xs">
+                        📝 {r.notes}
+                      </div>
+                    {/if}
                   </div>
                   <span class="text-text-muted text-xs">✏️</span>
                 </div>

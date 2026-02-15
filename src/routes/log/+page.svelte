@@ -8,7 +8,8 @@
 
   let date = $state(new Date().toISOString().slice(0, 10));
   let quickOdometer = $state("");
-  let showOdoInput = $state(false);
+  let quickNotes = $state("");
+  let showExtraInput = $state(false);
   let toast = $state("");
   let toastTimeout: ReturnType<typeof setTimeout>;
 
@@ -46,6 +47,7 @@
       action,
     };
     if (quickOdometer) content.odometer = parseFloat(quickOdometer);
+    if (quickNotes.trim()) content.notes = quickNotes.trim();
 
     try {
       await publishEvent(dTag, "quick", content);
@@ -54,6 +56,8 @@
         vehicleId,
         date,
         action,
+        odometer: quickOdometer ? parseFloat(quickOdometer) : undefined,
+        notes: quickNotes.trim() || undefined,
         createdAt: now,
       });
 
@@ -118,23 +122,31 @@
       ワンタップ整備 (タップで即記録!)
     </h3>
 
-    <!-- ODO 入力トグル -->
+    <!-- ODO / メモ入力トグル -->
     <div class="mb-2">
       <button
         type="button"
-        onclick={() => (showOdoInput = !showOdoInput)}
+        onclick={() => (showExtraInput = !showExtraInput)}
         class="text-text-muted hover:text-text text-xs transition-colors"
       >
-        📏 ODO も記録する {showOdoInput ? "▲" : "▼"}
+        📏 ODO / メモも残す {showExtraInput ? "▲" : "▼"}
       </button>
-      {#if showOdoInput}
-        <input
-          type="number"
-          bind:value={quickOdometer}
-          placeholder="ODO (km)"
-          inputmode="numeric"
-          class="bg-surface-light mt-1 w-full rounded-lg px-4 py-2 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      {#if showExtraInput}
+        <div class="mt-1 space-y-2">
+          <input
+            type="number"
+            bind:value={quickOdometer}
+            placeholder="ODO (km)"
+            inputmode="numeric"
+            class="bg-surface-light w-full rounded-lg px-4 py-2 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            bind:value={quickNotes}
+            placeholder="メモ (公開されます)"
+            class="bg-surface-light w-full rounded-lg px-4 py-2 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
       {/if}
     </div>
 

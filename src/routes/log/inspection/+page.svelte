@@ -8,6 +8,8 @@
 
   let activeTab = $state<InspectionType>("daily");
   let date = $state(new Date().toISOString().slice(0, 10));
+  let odometer = $state("");
+  let notes = $state("");
   let saving = $state(false);
   let toast = $state("");
   let toastTimeout: ReturnType<typeof setTimeout>;
@@ -67,6 +69,8 @@
         type: activeTab,
         allOk: true,
         issues: [],
+        ...(odometer ? { odometer: parseFloat(odometer) } : {}),
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
       });
 
       records.addInspection({
@@ -76,6 +80,8 @@
         type: activeTab,
         allOk: true,
         issues: [],
+        odometer: odometer ? parseFloat(odometer) : undefined,
+        notes: notes.trim() || undefined,
         createdAt: now,
       });
 
@@ -104,6 +110,8 @@
         type: activeTab,
         allOk: issues.length === 0,
         issues,
+        ...(odometer ? { odometer: parseFloat(odometer) } : {}),
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
       });
 
       records.addInspection({
@@ -113,6 +121,8 @@
         type: activeTab,
         allOk: issues.length === 0,
         issues,
+        odometer: odometer ? parseFloat(odometer) : undefined,
+        notes: notes.trim() || undefined,
         createdAt: now,
       });
 
@@ -166,6 +176,43 @@
       class="bg-surface w-full rounded-lg px-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500"
     />
   </div>
+
+  <!-- ODO + メモ -->
+  <details>
+    <summary
+      class="text-text-muted flex cursor-pointer items-center gap-1 text-sm select-none"
+    >
+      <span class="transition-transform group-open:rotate-90">▶</span>
+      📏 ODO / メモ
+    </summary>
+    <div class="mt-2 space-y-3">
+      <div>
+        <label for="odo" class="text-text-muted mb-1 block text-sm"
+          >ODO (km)</label
+        >
+        <input
+          id="odo"
+          type="number"
+          bind:value={odometer}
+          placeholder="例: 5000"
+          inputmode="numeric"
+          class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="notes" class="text-text-muted mb-1 block text-sm"
+          >メモ</label
+        >
+        <textarea
+          id="notes"
+          bind:value={notes}
+          rows="2"
+          placeholder="気づいたことなど (公開されます)"
+          class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+        ></textarea>
+      </div>
+    </div>
+  </details>
 
   <!-- 全部OK ボタン -->
   <button

@@ -94,10 +94,32 @@
                   v.maker,
                   v.year ? `${v.year}年` : "",
                   v.displacement ? `${v.displacement}cc` : "",
+                  v.fuelType === "premium"
+                    ? "ハイオク"
+                    : v.fuelType === "diesel"
+                      ? "軽油"
+                      : v.fuelType === "regular"
+                        ? "レギュラー"
+                        : "",
                 ]
                   .filter(Boolean)
                   .join(" / ") || "詳細未設定"}
               </div>
+              {#if v.fuelTankCapacity || v.recommendedTirePressureFront || v.recommendedTirePressureRear}
+                <div
+                  class="text-text-muted mt-0.5 flex flex-wrap gap-x-2 text-xs"
+                >
+                  {#if v.fuelTankCapacity}
+                    <span>🛢 {v.fuelTankCapacity}L</span>
+                  {/if}
+                  {#if v.recommendedTirePressureFront || v.recommendedTirePressureRear}
+                    <span
+                      >🛞 F:{v.recommendedTirePressureFront ?? "?"} R:{v.recommendedTirePressureRear ??
+                        "?"} kPa</span
+                    >
+                  {/if}
+                </div>
+              {/if}
             </div>
             <a
               href="/vehicle?id={v.id}"

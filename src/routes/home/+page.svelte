@@ -461,7 +461,14 @@
 
   <!-- 直近の記録 -->
   <div class="bg-surface rounded-xl p-4">
-    <h2 class="text-text-muted mb-3 text-sm font-medium">📝 最近の記録</h2>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-text-muted text-sm font-medium">📝 最近の記録</h2>
+      {#if timeline.length > 0}
+        <a href="/history" class="text-primary text-xs hover:underline"
+          >すべて見る →</a
+        >
+      {/if}
+    </div>
     {#if timeline.length > 0}
       <div class="space-y-2">
         {#each timeline as item}

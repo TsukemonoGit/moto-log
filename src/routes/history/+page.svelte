@@ -1,6 +1,13 @@
 <script lang="ts">
-  import { vehicleStore, records } from "$lib/stores/app.svelte";
+  import {
+    vehicleStore,
+    records,
+    auth,
+    pagination,
+  } from "$lib/stores/app.svelte";
   import { QUICK_ACTION_LABELS, SHOP_CATEGORY_LABELS } from "$lib/constants";
+  import { loadMoreData } from "$lib/nostr/subscribe";
+  import { toastStore } from "$lib/stores/toast.svelte";
   import type { RecordType } from "$lib/models/types";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
@@ -122,6 +129,24 @@
       odometer: "📏",
     };
     return icons[type] || "📝";
+  }
+
+  async function handleLoadMore() {
+    if (!auth.pubkey || !pagination.hasMore) return;
+    pagination.setLoadingMore(true);
+    try {
+      const data = await loadMoreData(auth.pubkey, pagination.cursor);
+      records.appendAll(data);
+      pagination.setCursor(data.cursor, data.hasMore);
+      if (!data.hasMore) {
+        toastStore.show("すべてのデータを読み込みました");
+      }
+    } catch (e) {
+      console.error("Load more failed:", e);
+      toastStore.show("追加データの取得に失敗しました");
+    } finally {
+      pagination.setLoadingMore(false);
+    }
   }
 </script>
 
@@ -441,5 +466,20 @@
         </div>
       </div>
     {/each}
+  {/if}
+
+  <!-- もっと読む -->
+  {#if pagination.hasMore}
+    <button
+      onclick={handleLoadMore}
+      disabled={pagination.loadingMore}
+      class="w-full rounded-lg bg-card hover:bg-white/10 px-4 py-3 text-sm font-medium transition-colors disabled:opacity-40"
+    >
+      {#if pagination.loadingMore}
+        ⏳ 読み込み中...
+      {:else}
+        📜 もっと読む
+      {/if}
+    </button>
   {/if}
 </div>

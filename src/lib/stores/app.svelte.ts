@@ -29,6 +29,7 @@ export const auth = {
     _pubkey = null;
     _loggedIn = false;
     records.clear();
+    pagination.clear();
   },
 };
 
@@ -241,6 +242,40 @@ export const records = {
     _shopRecords = [];
     _odometerRecords = [];
   },
+
+  /** 追加取得したデータをマージする (もっと読む) */
+  appendAll(data: {
+    refuels: RefuelRecord[];
+    quickRecords: QuickRecord[];
+    inspections: InspectionRecord[];
+    shopRecords: ShopRecord[];
+    odometerRecords: OdometerRecord[];
+  }) {
+    // d-tag (id) ベースの重複排除: 同一 id なら created_at が新しい方を採用
+    function mergeById<T extends { id: string; createdAt: number }>(
+      existing: T[],
+      incoming: T[],
+    ): T[] {
+      const merged = [...existing];
+      for (const item of incoming) {
+        const idx = merged.findIndex((x) => x.id === item.id);
+        if (idx >= 0) {
+          if (item.createdAt > merged[idx].createdAt) merged[idx] = item;
+        } else {
+          merged.push(item);
+        }
+      }
+      return merged.sort((a, b) =>
+        (a as any).date > (b as any).date ? -1 : 1,
+      );
+    }
+
+    _refuels = mergeById(_refuels, data.refuels);
+    _quickRecords = mergeById(_quickRecords, data.quickRecords);
+    _inspections = mergeById(_inspections, data.inspections);
+    _shopRecords = mergeById(_shopRecords, data.shopRecords);
+    _odometerRecords = mergeById(_odometerRecords, data.odometerRecords);
+  },
 };
 
 // --- Raw Events (開発者ビュー用) ---
@@ -266,5 +301,35 @@ export const rawEventStore = {
 
   clear() {
     _rawEvents = new Map();
+  },
+};
+
+// --- Pagination (もっと読む) ---
+let _hasMore = $state(false);
+let _cursor = $state(0);
+let _loadingMore = $state(false);
+
+export const pagination = {
+  get hasMore() {
+    return _hasMore;
+  },
+  get cursor() {
+    return _cursor;
+  },
+  get loadingMore() {
+    return _loadingMore;
+  },
+
+  setCursor(cursor: number, hasMore: boolean) {
+    _cursor = cursor;
+    _hasMore = hasMore;
+  },
+  setLoadingMore(v: boolean) {
+    _loadingMore = v;
+  },
+  clear() {
+    _hasMore = false;
+    _cursor = 0;
+    _loadingMore = false;
   },
 };

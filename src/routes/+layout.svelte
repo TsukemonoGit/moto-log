@@ -3,7 +3,12 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { auth, vehicleStore, records } from "$lib/stores/app.svelte";
+  import {
+    auth,
+    vehicleStore,
+    records,
+    pagination,
+  } from "$lib/stores/app.svelte";
   import { loadAllData } from "$lib/nostr/subscribe";
   import { getRxNostr } from "$lib/nostr/client";
   import Toast from "$lib/components/Toast.svelte";
@@ -33,6 +38,7 @@
       const data = await loadAllData(pubkey);
       vehicleStore.setVehicles(data.vehicles);
       records.setAll(data);
+      pagination.setCursor(data.cursor, data.hasMore);
       records.setLoading(false);
 
       if (data.vehicles.length === 0) {

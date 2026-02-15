@@ -4,6 +4,7 @@
   import type { QuickActionType } from "$lib/models/types";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
+  const vehicle = $derived(vehicleStore.activeVehicle);
 
   let date = $state(new Date().toISOString().slice(0, 10));
   let quickOdometer = $state("");
@@ -136,6 +137,30 @@
         />
       {/if}
     </div>
+
+    <!-- タイヤ空気圧リマインダー -->
+    {#if vehicle?.recommendedTirePressureFront || vehicle?.recommendedTirePressureRear}
+      <div
+        class="bg-surface mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-xs"
+      >
+        <span>💨</span>
+        <span class="text-text-muted">推奨空気圧:</span>
+        {#if vehicle.recommendedTirePressureFront}
+          <span
+            >前 <strong class="text-white"
+              >{vehicle.recommendedTirePressureFront}</strong
+            > kPa</span
+          >
+        {/if}
+        {#if vehicle.recommendedTirePressureRear}
+          <span
+            >後 <strong class="text-white"
+              >{vehicle.recommendedTirePressureRear}</strong
+            > kPa</span
+          >
+        {/if}
+      </div>
+    {/if}
 
     <div class="grid grid-cols-4 gap-2">
       {#each quickActions as qa}

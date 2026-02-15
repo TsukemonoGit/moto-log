@@ -10,6 +10,8 @@
   let displacement = $state("");
   let fuelTankCapacity = $state("");
   let fuelType = $state<"regular" | "premium" | "diesel">("regular");
+  let tirePressureFront = $state("");
+  let tirePressureRear = $state("");
   let saving = $state(false);
   let error = $state("");
 
@@ -33,6 +35,8 @@
       displacement = v.displacement?.toString() ?? "";
       fuelTankCapacity = v.fuelTankCapacity?.toString() ?? "";
       fuelType = v.fuelType ?? "regular";
+      tirePressureFront = v.recommendedTirePressureFront?.toString() ?? "";
+      tirePressureRear = v.recommendedTirePressureRear?.toString() ?? "";
     }
   });
 
@@ -66,6 +70,10 @@
       if (fuelTankCapacity)
         content.fuelTankCapacity = parseFloat(fuelTankCapacity);
       content.fuelType = fuelType;
+      if (tirePressureFront)
+        content.recommendedTirePressureFront = parseInt(tirePressureFront);
+      if (tirePressureRear)
+        content.recommendedTirePressureRear = parseInt(tirePressureRear);
 
       await publishEvent(`vehicle:${vehicleId}`, "vehicle", content);
 
@@ -79,6 +87,12 @@
           ? parseFloat(fuelTankCapacity)
           : undefined,
         fuelType,
+        recommendedTirePressureFront: tirePressureFront
+          ? parseInt(tirePressureFront)
+          : undefined,
+        recommendedTirePressureRear: tirePressureRear
+          ? parseInt(tirePressureRear)
+          : undefined,
       });
 
       // 新規追加時はその車両をアクティブに
@@ -202,6 +216,41 @@
             class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+        <!-- タイヤ空気圧 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              for="tirePressureFront"
+              class="text-text-muted mb-1 block text-sm">前輪空気圧 (kPa)</label
+            >
+            <input
+              id="tirePressureFront"
+              type="number"
+              bind:value={tirePressureFront}
+              placeholder="225"
+              inputmode="numeric"
+              class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label
+              for="tirePressureRear"
+              class="text-text-muted mb-1 block text-sm">後輪空気圧 (kPa)</label
+            >
+            <input
+              id="tirePressureRear"
+              type="number"
+              bind:value={tirePressureRear}
+              placeholder="250"
+              inputmode="numeric"
+              class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <p class="text-text-muted -mt-2 text-xs">
+          💡 設定すると空気圧入れる時に表示されます
+        </p>
+
         <div>
           <label for="fuelType" class="text-text-muted mb-1 block text-sm"
             >燃料種別</label

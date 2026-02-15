@@ -6,7 +6,7 @@ import {
 import { verifier } from "rx-nostr-crypto";
 
 const DEFAULT_RELAYS = [
-  "wss://relay.damus.io",
+  "wss://nostr.compile-error.net",
   "wss://nos.lol",
   "wss://relay.nostr.wirednet.jp",
 ];

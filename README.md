@@ -102,9 +102,10 @@ src/
 
 ## デフォルトリレー
 
-- `wss://relay.damus.io`
+- `wss://nostr.compile-error.net`
 - `wss://nos.lol`
 - `wss://relay.nostr.wirednet.jp`
+- `wss://nostr.compile-error.net`
 
 設定画面からリレーの追加・削除が可能です（予定）。接続状態はリアルタイムで確認できます。
 

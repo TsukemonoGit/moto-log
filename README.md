@@ -1,6 +1,6 @@
 # 🏍️ Nostr Moto Log
 
-バイクの給油・整備・点検を [Nostr](https://nostr.com/) に記録する PWA 風ウェブアプリ。
+バイクの給油・整備・点検を [Nostr](https://nostr.com/) に記録する PWA ウェブアプリ。
 
 データは Nostr リレーに **kind 30078 (Parameterized Replaceable Event)** として保存されるため、特定のサーバーに依存せず、どこからでもアクセスできます。
 
@@ -74,25 +74,30 @@ npm run check        # 型チェック (svelte-check)
 ```
 src/
 ├── lib/
-│   ├── models/types.ts        # データ型定義
-│   ├── stores/app.svelte.ts   # グローバル状態管理 (Svelte 5 Runes)
+│   ├── components/Toast.svelte  # グローバルトースト通知
+│   ├── constants.ts             # 共通定数・ラベル
+│   ├── models/types.ts          # データ型定義
+│   ├── stores/
+│   │   ├── app.svelte.ts        # グローバル状態管理 (Svelte 5 Runes)
+│   │   └── toast.svelte.ts      # トースト通知ストア
 │   ├── nostr/
-│   │   ├── client.ts          # rx-nostr クライアント
-│   │   ├── publish.ts         # イベント発行
-│   │   └── subscribe.ts       # イベント購読・データ読み込み
+│   │   ├── client.ts            # rx-nostr クライアント
+│   │   ├── publish.ts           # イベント発行
+│   │   └── subscribe.ts         # イベント購読・データ読み込み
 │   └── services/
-│       └── fuel-calc.ts       # 燃費計算ロジック
+│       └── fuel-calc.ts         # 燃費計算ロジック
 ├── routes/
-│   ├── +layout.svelte         # 共通レイアウト (認証・ナビ)
-│   ├── +page.svelte           # ログイン画面
-│   ├── home/                  # ダッシュボード
-│   ├── log/                   # 記録入力 (給油・点検・ショップ)
-│   ├── history/               # 履歴一覧
-│   ├── stats/                 # 統計
-│   ├── edit/                  # 記録編集
-│   ├── settings/              # 設定
-│   └── vehicle/               # 車両登録
-└── app.css                    # Tailwind CSS + カスタムテーマ
+│   ├── +layout.svelte           # 共通レイアウト (認証・ナビ・トースト)
+│   ├── +page.svelte             # ログイン画面
+│   ├── home/                    # ダッシュボード
+│   ├── log/                     # 記録入力 (給油・点検・ショップ)
+│   ├── history/                 # 履歴一覧
+│   ├── stats/                   # 統計
+│   ├── edit/                    # 記録編集
+│   ├── settings/                # 設定
+│   └── vehicle/                 # 車両登録
+├── service-worker.ts            # PWA Service Worker
+└── app.css                      # Tailwind CSS + カスタムテーマ
 ```
 
 ## デフォルトリレー
@@ -101,7 +106,7 @@ src/
 - `wss://nos.lol`
 - `wss://relay.nostr.wirednet.jp`
 
-設定画面からリレーの追加・削除が可能です。
+設定画面からリレーの追加・削除が可能です（予定）。接続状態はリアルタイムで確認できます。
 
 ## ⚠️ プライバシーに関する注意
 

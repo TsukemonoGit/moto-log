@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { page } from "$app/state";
   import { vehicleStore } from "$lib/stores/app.svelte";
   import { publishEvent } from "$lib/nostr/publish";
 
@@ -12,17 +13,26 @@
   let saving = $state(false);
   let error = $state("");
 
-  const existingVehicle = $derived(vehicleStore.activeVehicle);
+  // ?id=xxx で特定車両の編集、?new=1 で新規追加、それ以外は activeVehicle の編集
+  const isNewMode = $derived(page.url.searchParams.get("new") === "1");
 
-  // 既存車両があれば初期値をセット
+  const editTarget = $derived(() => {
+    if (isNewMode) return undefined;
+    const id = page.url.searchParams.get("id");
+    if (id) return vehicleStore.vehicles.find((v) => v.id === id);
+    return vehicleStore.activeVehicle;
+  });
+
+  // 編集対象があればフォームにセット
   $effect(() => {
-    if (existingVehicle) {
-      name = existingVehicle.name;
-      maker = existingVehicle.maker ?? "";
-      year = existingVehicle.year?.toString() ?? "";
-      displacement = existingVehicle.displacement?.toString() ?? "";
-      fuelTankCapacity = existingVehicle.fuelTankCapacity?.toString() ?? "";
-      fuelType = existingVehicle.fuelType ?? "regular";
+    const v = editTarget();
+    if (v) {
+      name = v.name;
+      maker = v.maker ?? "";
+      year = v.year?.toString() ?? "";
+      displacement = v.displacement?.toString() ?? "";
+      fuelTankCapacity = v.fuelTankCapacity?.toString() ?? "";
+      fuelType = v.fuelType ?? "regular";
     }
   });
 
@@ -45,7 +55,7 @@
     error = "";
 
     try {
-      const vehicleId = existingVehicle?.id ?? slugify(name);
+      const vehicleId = editTarget()?.id ?? slugify(name);
       const content: Record<string, unknown> = {
         v: 1,
         name: name.trim(),
@@ -71,7 +81,9 @@
         fuelType,
       });
 
-      goto("/home");
+      // 新規追加時はその車両をアクティブに
+      if (isNewMode) vehicleStore.setActive(vehicleId);
+      goto("/settings");
     } catch (e: any) {
       error = e.message || "保存に失敗しました";
     } finally {
@@ -81,11 +93,14 @@
 </script>
 
 <div class="space-y-6">
-  <h2 class="text-xl font-bold">
-    {existingVehicle ? "車両を編集" : "🏍️ バイクを登録"}
-  </h2>
+  <div class="flex items-center gap-3">
+    <a href="/settings" class="text-text-muted hover:text-text">←</a>
+    <h2 class="text-xl font-bold">
+      {editTarget() ? "車両を編集" : "🏍️ バイクを登録"}
+    </h2>
+  </div>
 
-  {#if !existingVehicle}
+  {#if !editTarget()}
     <p class="text-text-muted text-sm">
       まずはバイクの名前だけでOK! 詳細は後からいつでも追加できます。
     </p>
@@ -213,7 +228,7 @@
       disabled={saving || !name.trim()}
       class="bg-primary hover:bg-primary-dark w-full rounded-lg py-3 font-bold text-white transition-colors disabled:opacity-50"
     >
-      {saving ? "保存中..." : existingVehicle ? "更新する" : "登録する"}
+      {saving ? "保存中..." : editTarget() ? "更新する" : "登録する"}
     </button>
   </form>
 </div>

@@ -52,7 +52,13 @@ export const vehicleStore = {
     }
   },
   addVehicle(vehicle: Vehicle) {
-    _vehicles = [..._vehicles, vehicle];
+    // 同じ ID の車両が既にあれば更新、なければ追加
+    const idx = _vehicles.findIndex((v) => v.id === vehicle.id);
+    if (idx >= 0) {
+      _vehicles = _vehicles.map((v) => (v.id === vehicle.id ? vehicle : v));
+    } else {
+      _vehicles = [..._vehicles, vehicle];
+    }
     if (!_activeVehicleId) {
       _activeVehicleId = vehicle.id;
     }

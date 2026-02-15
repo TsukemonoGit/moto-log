@@ -62,6 +62,61 @@
 <div class="space-y-4">
   <h2 class="text-xl font-bold">⚙️ 設定</h2>
 
+  <!-- 車両情報 -->
+  <div class="bg-surface rounded-xl p-4">
+    <h3 class="text-text-muted mb-3 text-sm font-medium">🏍️ 車両</h3>
+    {#if vehicleStore.vehicles.length === 0}
+      <p class="text-text-muted text-sm">車両が登録されていません</p>
+      <a
+        href="/vehicle?new=1"
+        class="bg-primary hover:bg-primary-dark mt-2 inline-block rounded-lg px-4 py-2 text-sm font-medium text-white"
+      >
+        バイクを登録する
+      </a>
+    {:else}
+      <div class="space-y-2">
+        {#each vehicleStore.vehicles as v}
+          <div
+            class="bg-bg flex items-center justify-between rounded-lg px-3 py-2"
+          >
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium">{v.name}</span>
+                {#if v.id === vehicleStore.activeVehicleId}
+                  <span
+                    class="bg-primary/20 text-primary rounded px-1.5 py-0.5 text-xs"
+                    >使用中</span
+                  >
+                {/if}
+              </div>
+              <div class="text-text-muted text-xs">
+                {[
+                  v.maker,
+                  v.year ? `${v.year}年` : "",
+                  v.displacement ? `${v.displacement}cc` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" / ") || "詳細未設定"}
+              </div>
+            </div>
+            <a
+              href="/vehicle?id={v.id}"
+              class="text-primary text-xs hover:underline"
+            >
+              編集
+            </a>
+          </div>
+        {/each}
+      </div>
+      <a
+        href="/vehicle?new=1"
+        class="bg-surface-light hover:bg-surface mt-3 inline-block rounded-lg px-4 py-2 text-sm transition-colors"
+      >
+        ＋ バイクを追加
+      </a>
+    {/if}
+  </div>
+
   <!-- アカウント情報 -->
   <div class="bg-surface rounded-xl p-4">
     <h3 class="text-text-muted mb-3 text-sm font-medium">🔑 アカウント</h3>

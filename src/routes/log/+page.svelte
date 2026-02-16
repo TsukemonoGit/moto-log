@@ -126,6 +126,9 @@
       </button>
       {#if showExtraInput}
         <div class="mt-1 space-y-2">
+          <p class="text-text-muted text-xs">
+            入力してからボタンをタップすると、ODO / メモも一緒に記録されます
+          </p>
           <input
             type="number"
             bind:value={quickOdometer}

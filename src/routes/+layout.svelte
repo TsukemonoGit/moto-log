@@ -68,7 +68,6 @@
     import("@konemono/nostr-login")
       .then(({ init }) => {
         init({
-          darkMode: true,
           title: "Nostr Moto Log",
           perms: "sign_event:30078,sign_event:5",
         });

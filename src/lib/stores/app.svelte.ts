@@ -65,6 +65,13 @@ export const vehicleStore = {
       _activeVehicleId = vehicle.id;
     }
   },
+  removeVehicle(id: string) {
+    _vehicles = _vehicles.filter((v) => v.id !== id);
+    // 削除した車両がアクティブだった場合は別の車両に切り替え
+    if (_activeVehicleId === id) {
+      _activeVehicleId = _vehicles.length > 0 ? _vehicles[0].id : null;
+    }
+  },
   setActive(id: string) {
     _activeVehicleId = id;
   },
@@ -241,6 +248,37 @@ export const records = {
     _inspections = [];
     _shopRecords = [];
     _odometerRecords = [];
+  },
+
+  /** 指定車両の最新オドメーター値を取得 (全記録種別から) */
+  getLatestOdometer(vehicleId: string): number | null {
+    let max: number | null = null;
+    for (const r of _refuels) {
+      if (r.vehicleId === vehicleId && r.odometer != null) {
+        if (max === null || r.odometer > max) max = r.odometer;
+      }
+    }
+    for (const r of _quickRecords) {
+      if (r.vehicleId === vehicleId && r.odometer != null) {
+        if (max === null || r.odometer > max) max = r.odometer;
+      }
+    }
+    for (const r of _inspections) {
+      if (r.vehicleId === vehicleId && r.odometer != null) {
+        if (max === null || r.odometer > max) max = r.odometer;
+      }
+    }
+    for (const r of _shopRecords) {
+      if (r.vehicleId === vehicleId && r.odometer != null) {
+        if (max === null || r.odometer > max) max = r.odometer;
+      }
+    }
+    for (const r of _odometerRecords) {
+      if (r.vehicleId === vehicleId) {
+        if (max === null || r.odometer > max) max = r.odometer;
+      }
+    }
+    return max;
   },
 
   /** 追加取得したデータをマージする (もっと読む) */

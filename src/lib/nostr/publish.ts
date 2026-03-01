@@ -1,8 +1,7 @@
 import { getRxNostr } from "./client";
 import type { EventTemplate } from "nostr-tools";
 import { rawEventStore } from "$lib/stores/app.svelte";
-
-const APP_LABEL = "nostr-moto-log";
+import { APP_LABEL } from "$lib/constants";
 
 /**
  * kind 30078 のイベントを構築して publish する

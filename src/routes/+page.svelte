@@ -1,6 +1,11 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { auth, vehicleStore, records } from "$lib/stores/app.svelte";
+  import {
+    auth,
+    vehicleStore,
+    records,
+    pagination,
+  } from "$lib/stores/app.svelte";
   import { loadAllData } from "$lib/nostr/subscribe";
   import { getRxNostr } from "$lib/nostr/client";
 
@@ -29,6 +34,7 @@
       const data = await loadAllData(pubkey);
       vehicleStore.setVehicles(data.vehicles);
       records.setAll(data);
+      pagination.setCursor(data.cursor, data.hasMore);
       records.setLoading(false);
 
       // 車両未登録ならセットアップへ、そうでなければホームへ

@@ -1,5 +1,8 @@
 import type { QuickActionType, ShopCategory } from "$lib/models/types";
 
+// --- Nostr アプリラベル ---
+export const APP_LABEL = "nostr-moto-log";
+
 // --- クイック整備ラベル ---
 
 /** アイコン付きラベル (履歴・統計・ホームで使用) */

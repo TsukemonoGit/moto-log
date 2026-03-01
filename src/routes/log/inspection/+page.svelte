@@ -6,6 +6,7 @@
   import type { InspectionType } from "$lib/models/types";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
+  const latestOdo = $derived(records.getLatestOdometer(vehicleId));
 
   let activeTab = $state<InspectionType>("daily");
   let date = $state(new Date().toISOString().slice(0, 10));
@@ -227,6 +228,11 @@
           inputmode="numeric"
           class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {#if odometer && latestOdo != null && parseFloat(odometer) < latestOdo}
+          <p class="mt-1 text-xs text-amber-400">
+            ⚠️ 前回の記録 ({latestOdo.toLocaleString()} km) より小さい値です
+          </p>
+        {/if}
       </div>
       <div>
         <label for="notes" class="text-text-muted mb-1 block text-sm"

@@ -12,6 +12,7 @@
   const lastRefuel = $derived(
     records.refuels.filter((r) => r.vehicleId === vehicleId)[0],
   );
+  const latestOdo = $derived(records.getLatestOdometer(vehicleId));
 
   let date = $state(new Date().toISOString().slice(0, 10));
   let fuelAmount = $state("");
@@ -324,6 +325,11 @@
         <p class="text-text-muted mt-1 text-xs">
           💡 入力すると燃費が計算されます
         </p>
+        {#if odometer && latestOdo != null && parseFloat(odometer) < latestOdo}
+          <p class="mt-1 text-xs text-amber-400">
+            ⚠️ 前回の記録 ({latestOdo.toLocaleString()} km) より小さい値です
+          </p>
+        {/if}
       </div>
     </details>
 

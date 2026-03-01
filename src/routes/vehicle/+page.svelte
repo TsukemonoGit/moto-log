@@ -2,7 +2,8 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { vehicleStore } from "$lib/stores/app.svelte";
-  import { publishEvent } from "$lib/nostr/publish";
+  import { publishEvent, deleteEvent } from "$lib/nostr/publish";
+  import { toastStore } from "$lib/stores/toast.svelte";
 
   let name = $state("");
   let maker = $state("");
@@ -13,6 +14,7 @@
   let tirePressureFront = $state("");
   let tirePressureRear = $state("");
   let saving = $state(false);
+  let deleting = $state(false);
   let error = $state("");
 
   // ?id=xxx で特定車両の編集、?new=1 で新規追加、それ以外は activeVehicle の編集
@@ -102,6 +104,31 @@
       error = e.message || "保存に失敗しました";
     } finally {
       saving = false;
+    }
+  }
+
+  async function handleDelete() {
+    const target = editTarget();
+    if (!target) return;
+    if (
+      !confirm(
+        `「${target.name}」を削除しますか？\nNostr上のデータも削除されます。`,
+      )
+    )
+      return;
+
+    deleting = true;
+    error = "";
+
+    try {
+      await deleteEvent(`vehicle:${target.id}`);
+      vehicleStore.removeVehicle(target.id);
+      toastStore.show("車両を削除しました");
+      goto("/settings");
+    } catch (e: any) {
+      error = e.message || "削除に失敗しました";
+    } finally {
+      deleting = false;
     }
   }
 </script>
@@ -280,4 +307,17 @@
       {saving ? "保存中..." : editTarget() ? "更新する" : "登録する"}
     </button>
   </form>
+
+  {#if editTarget()}
+    <div class="border-t border-white/10 pt-4">
+      <button
+        type="button"
+        onclick={handleDelete}
+        disabled={deleting}
+        class="w-full rounded-lg bg-red-900/30 px-4 py-2 text-sm text-red-400 hover:bg-red-900/50 disabled:opacity-50"
+      >
+        {deleting ? "削除中..." : "🗑️ この車両を削除"}
+      </button>
+    </div>
+  {/if}
 </div>

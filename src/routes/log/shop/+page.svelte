@@ -6,6 +6,7 @@
   import { toastStore } from "$lib/stores/toast.svelte";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
+  const latestOdo = $derived(records.getLatestOdometer(vehicleId));
 
   let date = $state(new Date().toISOString().slice(0, 10));
   let category = $state<"regular" | "repair" | "shaken" | "custom">("regular");
@@ -201,6 +202,11 @@
               placeholder="10000"
               class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {#if odometer && latestOdo != null && parseFloat(odometer) < latestOdo}
+              <p class="mt-1 text-xs text-amber-400">
+                ⚠️ 前回の記録 ({latestOdo.toLocaleString()} km) より小さい値です
+              </p>
+            {/if}
           </div>
           <div>
             <label for="totalCost" class="text-text-muted mb-1 block text-sm"

@@ -7,11 +7,14 @@
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
   const vehicle = $derived(vehicleStore.activeVehicle);
+  const latestOdo = $derived(records.getLatestOdometer(vehicleId));
 
   let date = $state(new Date().toISOString().slice(0, 10));
   let quickOdometer = $state("");
   let quickNotes = $state("");
   let showExtraInput = $state(false);
+  let customActionName = $state("");
+  let showCustomInput = $state(false);
 
   const quickActions: {
     action: QuickActionType;
@@ -40,6 +43,9 @@
     };
     if (quickOdometer) content.odometer = parseFloat(quickOdometer);
     if (quickNotes.trim()) content.notes = quickNotes.trim();
+    if (action === "custom" && customActionName.trim()) {
+      content.customName = customActionName.trim();
+    }
 
     try {
       await publishEvent(dTag, "quick", content);
@@ -136,6 +142,11 @@
             inputmode="numeric"
             class="bg-surface-light w-full rounded-lg px-4 py-2 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {#if quickOdometer && latestOdo != null && parseFloat(quickOdometer) < latestOdo}
+            <p class="text-xs text-amber-400">
+              ⚠️ 前回の記録 ({latestOdo.toLocaleString()} km) より小さい値です
+            </p>
+          {/if}
           <input
             type="text"
             bind:value={quickNotes}
@@ -183,7 +194,36 @@
           >
         </button>
       {/each}
+      <!-- カスタムアクション -->
+      <button
+        onclick={() => (showCustomInput = !showCustomInput)}
+        class="bg-surface hover:bg-surface-light flex flex-col items-center justify-center rounded-xl p-3 transition-colors active:scale-95 {showCustomInput
+          ? 'ring-2 ring-blue-500'
+          : ''}"
+      >
+        <span class="text-2xl">📝</span>
+        <span class="mt-1 text-center text-xs leading-tight">その他</span>
+      </button>
     </div>
+    {#if showCustomInput}
+      <div class="mt-2 flex gap-2">
+        <input
+          type="text"
+          bind:value={customActionName}
+          placeholder="整備内容を入力"
+          class="bg-surface-light flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onclick={() => {
+            if (customActionName.trim()) recordQuickAction("custom");
+          }}
+          disabled={!customActionName.trim()}
+          class="bg-primary hover:bg-primary-dark rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
+        >
+          記録
+        </button>
+      </div>
+    {/if}
   </div>
 
   <!-- 点検 -->

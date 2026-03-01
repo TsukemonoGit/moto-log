@@ -10,8 +10,8 @@ import type {
 import type { NostrEvent } from "nostr-tools";
 import { uniq } from "rx-nostr";
 import { rawEventStore } from "$lib/stores/app.svelte";
+import { APP_LABEL } from "$lib/constants";
 
-const APP_LABEL = "nostr-moto-log";
 const BATCH_SIZE = 200;
 
 export interface LoadedData {

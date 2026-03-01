@@ -75,6 +75,14 @@
       .catch((e) => console.error("Failed to init nostr-login:", e))
       .finally(() => {
         initializing = false;
+
+        // nlAuth が init 完了後すぐに発火しないケースへのフォールバック:
+        // 短い遅延後にまだ未ログインなら window.nostr を直接チェックして自動ログインを試行
+        setTimeout(() => {
+          if (!auth.loggedIn && (window as any).nostr) {
+            handleAuthLogin();
+          }
+        }, 500);
       });
 
     return () => {
@@ -112,9 +120,14 @@
               </button>
               {#if showVehicleMenu}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <!-- backdrop: タップアウトでメニューを閉じる -->
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <div
+                  class="fixed inset-0 z-40"
+                  onclick={() => (showVehicleMenu = false)}
+                ></div>
                 <div
                   class="bg-surface absolute top-full left-0 z-50 mt-1 min-w-[140px] rounded-lg border border-white/10 py-1 shadow-xl"
-                  onmouseleave={() => (showVehicleMenu = false)}
                 >
                   {#each vehicleStore.vehicles as v}
                     <button

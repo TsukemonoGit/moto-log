@@ -6,7 +6,7 @@ import {
 import { verifier } from "rx-nostr-crypto";
 
 const DEFAULT_RELAYS = [
-  "wss://nostr.compile-error.net",
+  "wss://x.kojira.io",
   "wss://nos.lol",
   "wss://relay.nostr.wirednet.jp",
 ];
@@ -15,7 +15,11 @@ let rxNostr: ReturnType<typeof createRxNostr> | null = null;
 
 export function getRxNostr() {
   if (!rxNostr) {
-    rxNostr = createRxNostr({ verifier });
+    rxNostr = createRxNostr({
+      verifier,
+      authenticator: "auto",
+      eoseTimeout: 10000,
+    });
     rxNostr.setDefaultRelays(DEFAULT_RELAYS);
   }
   return rxNostr;

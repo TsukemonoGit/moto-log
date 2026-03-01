@@ -102,7 +102,7 @@ src/
 
 ## デフォルトリレー
 
-- `wss://nostr.compile-error.net`
+- `wss://x.kojira.io`
 - `wss://nos.lol`
 - `wss://relay.nostr.wirednet.jp`
 

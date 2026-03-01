@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { auth, vehicleStore, records } from "$lib/stores/app.svelte";
-  import { getFuelTypeLabel } from "$lib/constants";
+  import {
+    auth,
+    vehicleStore,
+    records,
+    maintenanceSettings,
+  } from "$lib/stores/app.svelte";
+  import { getFuelTypeLabel, QUICK_ACTION_TEXT_LABELS } from "$lib/constants";
   import { getRxNostr, getDefaultRelays } from "$lib/nostr/client";
   import type { ConnectionState } from "rx-nostr";
 
@@ -195,6 +200,67 @@
         ログアウト
       </button>
     </div>
+  </div>
+
+  <!-- リレー設定 -->
+  <div class="bg-surface rounded-xl p-4">
+    <h3 class="text-text-muted mb-3 text-sm font-medium">⚠️ メンテ警告設定</h3>
+    <p class="text-text-muted mb-3 text-xs">
+      各整備項目の警告・危険日数をカスタマイズできます
+    </p>
+    <div class="space-y-3">
+      {#each Object.entries(maintenanceSettings.thresholds) as [action, threshold]}
+        <div class="bg-bg rounded-lg px-3 py-2">
+          <div class="mb-1 text-sm font-medium">
+            {QUICK_ACTION_TEXT_LABELS[
+              action as keyof typeof QUICK_ACTION_TEXT_LABELS
+            ] ?? action}
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <label class="text-text-muted">注意:</label>
+            <input
+              type="number"
+              value={threshold.warnDays}
+              oninput={(e) => {
+                const v = parseInt((e.target as HTMLInputElement).value);
+                if (!isNaN(v) && v > 0)
+                  maintenanceSettings.setThreshold(
+                    action,
+                    v,
+                    threshold.dangerDays,
+                  );
+              }}
+              class="bg-surface-light w-16 rounded px-2 py-1 text-white outline-none"
+              inputmode="numeric"
+            />
+            <span class="text-text-muted">日</span>
+            <label class="text-text-muted ml-2">危険:</label>
+            <input
+              type="number"
+              value={threshold.dangerDays}
+              oninput={(e) => {
+                const v = parseInt((e.target as HTMLInputElement).value);
+                if (!isNaN(v) && v > 0)
+                  maintenanceSettings.setThreshold(
+                    action,
+                    threshold.warnDays,
+                    v,
+                  );
+              }}
+              class="bg-surface-light w-16 rounded px-2 py-1 text-white outline-none"
+              inputmode="numeric"
+            />
+            <span class="text-text-muted">日</span>
+          </div>
+        </div>
+      {/each}
+    </div>
+    <button
+      onclick={() => maintenanceSettings.reset()}
+      class="text-text-muted mt-3 text-xs hover:text-amber-400"
+    >
+      🔄 デフォルトに戻す
+    </button>
   </div>
 
   <!-- リレー設定 -->

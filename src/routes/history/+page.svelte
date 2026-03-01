@@ -8,7 +8,7 @@
   import { QUICK_ACTION_LABELS, SHOP_CATEGORY_LABELS } from "$lib/constants";
   import { loadMoreData } from "$lib/nostr/subscribe";
   import { toastStore } from "$lib/stores/toast.svelte";
-  import type { RecordType } from "$lib/models/types";
+  import type { TimelineItem } from "$lib/models/types";
 
   const vehicleId = $derived(vehicleStore.activeVehicleId ?? "");
   const timeline = $derived(records.getTimeline(vehicleId));
@@ -42,7 +42,7 @@
       items = items.filter(
         (i) =>
           i.type === "odometer" ||
-          (i.type === "quick" && (i.record as any).action === quickSubFilter),
+          (i.type === "quick" && i.record.action === quickSubFilter),
       );
     }
     return items;
@@ -84,10 +84,8 @@
         let fuelCost = 0;
         let shopCost = 0;
         for (const item of items) {
-          if (item.type === "refuel")
-            fuelCost += (item.record as any).totalCost ?? 0;
-          if (item.type === "shop")
-            shopCost += (item.record as any).totalCost ?? 0;
+          if (item.type === "refuel") fuelCost += item.record.totalCost ?? 0;
+          if (item.type === "shop") shopCost += item.record.totalCost ?? 0;
         }
         return {
           month,
@@ -106,11 +104,9 @@
   }
 
   // --- 給油間の走行距離 ---
-  function getPrevRefuelOdo(
-    currentItem: (typeof timeline)[number],
-  ): number | null {
+  function getPrevRefuelOdo(currentItem: TimelineItem): number | null {
     if (currentItem.type !== "refuel") return null;
-    const r = currentItem.record as any;
+    const r = currentItem.record;
     if (r.odometer == null) return null;
     const refuels = records.refuels
       .filter((x) => x.vehicleId === vehicleId && x.odometer != null)
@@ -240,7 +236,7 @@
             >
               <!-- 給油カード -->
               {#if item.type === "refuel"}
-                {@const r = item.record as any}
+                {@const r = item.record}
                 {@const prevOdo = getPrevRefuelOdo(item)}
                 <div class="flex items-start gap-3">
                   <span class="mt-0.5 text-xl">⛽</span>
@@ -296,7 +292,7 @@
 
                 <!-- クイック整備カード -->
               {:else if item.type === "quick"}
-                {@const r = item.record as any}
+                {@const r = item.record}
                 {@const lastSame = (() => {
                   const same = records.quickRecords
                     .filter(
@@ -335,14 +331,14 @@
 
                 <!-- 点検カード -->
               {:else if item.type === "inspection"}
-                {@const r = item.record as any}
+                {@const r = item.record}
                 <div class="flex items-start gap-3">
                   <span class="mt-0.5 text-xl">📋</span>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between">
                       <span class="text-sm font-medium">
                         {{ daily: "日常", weekly: "週間", monthly: "月間" }[
-                          r.type as string
+                          r.type
                         ] ?? ""}点検
                         <span
                           class="ml-1 rounded px-1.5 py-0.5 text-xs {r.allOk
@@ -365,13 +361,13 @@
                             class="inline-flex items-center gap-0.5 {issue.status ===
                             'ng'
                               ? 'text-red-400'
-                              : issue.status === 'caution'
+                              : issue.status === 'warning'
                                 ? 'text-yellow-400'
                                 : 'text-text-muted'}"
                           >
                             {issue.status === "ng"
                               ? "❌"
-                              : issue.status === "caution"
+                              : issue.status === "warning"
                                 ? "⚠️"
                                 : "❓"}{issue.item}
                           </span>
@@ -389,7 +385,7 @@
 
                 <!-- ショップ整備カード -->
               {:else if item.type === "shop"}
-                {@const r = item.record as any}
+                {@const r = item.record}
                 <div class="flex items-start gap-3">
                   <span class="mt-0.5 text-xl">🏭</span>
                   <div class="min-w-0 flex-1">
@@ -405,9 +401,7 @@
                           <span
                             class="bg-surface-light text-text-muted ml-1 rounded px-1.5 py-0.5 text-xs"
                           >
-                            {SHOP_CATEGORY_LABELS[
-                              r.category as keyof typeof SHOP_CATEGORY_LABELS
-                            ] ?? r.category}
+                            {SHOP_CATEGORY_LABELS[r.category] ?? r.category}
                           </span>
                         {/if}
                       </span>
@@ -449,9 +443,7 @@
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between">
                       <span class="text-sm font-medium">
-                        走行距離 {(
-                          item.record as any
-                        ).odometer.toLocaleString()} km
+                        走行距離 {item.record.odometer.toLocaleString()} km
                       </span>
                       <span class="text-text-muted text-xs"
                         >{item.date.slice(5)}</span

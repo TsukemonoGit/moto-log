@@ -192,28 +192,44 @@
             </div>
           </div>
 
-          <!-- 燃費推移グラフ -->
-          <div class="mt-4">
-            <p class="text-text-muted mb-2 text-xs">燃費推移 (直近10回)</p>
-            <div class="space-y-1">
-              {#each efficiencies.slice(-10) as eff}
-                {@const maxKmpl = bestWorst.best ?? 40}
-                {@const width = Math.min((eff.kmPerLiter / maxKmpl) * 100, 100)}
-                <div class="flex items-center gap-2 text-xs">
-                  <span class="text-text-muted w-12">{eff.date.slice(5)}</span>
+          <!-- 燃費推移グラフ (縦棒) -->
+          {#if efficiencies.length > 0}
+            {@const recentEff = efficiencies.slice(-10)}
+            {@const maxKmpl = bestWorst.best ?? 40}
+            <div class="mt-4">
+              <p class="text-text-muted mb-2 text-xs">燃費推移 (直近10回)</p>
+              <div class="flex items-end gap-1" style="height: 120px">
+                {#each recentEff as eff}
+                  {@const height = Math.min(
+                    (eff.kmPerLiter / maxKmpl) * 100,
+                    100,
+                  )}
                   <div
-                    class="h-4 flex-1 overflow-hidden rounded-full bg-slate-700"
+                    class="group relative flex flex-1 flex-col items-center justify-end h-full"
                   >
+                    <span
+                      class="text-text-muted mb-1 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      {eff.kmPerLiter}
+                    </span>
                     <div
-                      class="h-full rounded-full bg-blue-500 transition-all"
-                      style="width: {width}%"
+                      class="w-full rounded-t bg-blue-500 transition-all hover:bg-blue-400"
+                      style="height: {height}%"
                     ></div>
+                    <span
+                      class="text-text-muted mt-1 text-[9px] truncate w-full text-center"
+                      >{eff.date.slice(5)}</span
+                    >
                   </div>
-                  <span class="w-16 text-right">{eff.kmPerLiter} km/L</span>
+                {/each}
+              </div>
+              {#if avgFuel}
+                <div class="text-text-muted mt-1 text-right text-[10px]">
+                  平均: {avgFuel} km/L
                 </div>
-              {/each}
+              {/if}
             </div>
-          </div>
+          {/if}
         {:else}
           <p class="text-text-muted text-sm">
             ODO を入力した満タン給油が2回以上で燃費が計算されます
@@ -492,36 +508,42 @@
 
       <!-- 月別コスト推移 -->
       {#if monthlyTotalCosts().length > 0}
-        {@const maxTotal = Math.max(
-          ...monthlyTotalCosts().map(([, v]) => v.fuel + v.shop),
-        )}
+        {@const costs = monthlyTotalCosts()}
+        {@const maxTotal = Math.max(...costs.map(([, v]) => v.fuel + v.shop))}
         <div class="bg-surface rounded-xl p-4">
           <h3 class="text-text-muted mb-3 text-sm font-medium">
             📈 月別コスト推移 (直近6ヶ月)
           </h3>
-          <div class="space-y-1.5">
-            {#each monthlyTotalCosts() as [month, costs]}
-              {@const total = costs.fuel + costs.shop}
-              {@const width =
+          <div class="flex items-end gap-2" style="height: 140px">
+            {#each costs as [month, c]}
+              {@const total = c.fuel + c.shop}
+              {@const height =
                 maxTotal > 0 ? Math.min((total / maxTotal) * 100, 100) : 0}
-              {@const fuelRatio = total > 0 ? (costs.fuel / total) * 100 : 0}
-              <div class="flex items-center gap-2 text-xs">
-                <span class="text-text-muted w-10">{month.slice(5)}月</span>
-                <div
-                  class="h-5 flex-1 overflow-hidden rounded-full bg-slate-700"
+              {@const fuelRatio = total > 0 ? (c.fuel / total) * 100 : 0}
+              <div
+                class="group relative flex flex-1 flex-col items-center justify-end h-full"
+              >
+                <span
+                  class="text-text-muted mb-1 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <div class="flex h-full" style="width: {width}%">
-                    <div
-                      class="h-full bg-blue-500"
-                      style="width: {fuelRatio}%"
-                    ></div>
-                    <div
-                      class="h-full bg-amber-500"
-                      style="width: {100 - fuelRatio}%"
-                    ></div>
-                  </div>
+                  ¥{total.toLocaleString()}
+                </span>
+                <div
+                  class="w-full flex flex-col rounded-t overflow-hidden"
+                  style="height: {height}%"
+                >
+                  <div
+                    class="bg-amber-500 w-full"
+                    style="flex: {100 - fuelRatio}"
+                  ></div>
+                  <div
+                    class="bg-blue-500 w-full"
+                    style="flex: {fuelRatio}"
+                  ></div>
                 </div>
-                <span class="w-16 text-right">¥{total.toLocaleString()}</span>
+                <span class="text-text-muted mt-1 text-[10px]"
+                  >{month.slice(5)}月</span
+                >
               </div>
             {/each}
           </div>

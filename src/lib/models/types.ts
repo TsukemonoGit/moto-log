@@ -111,6 +111,14 @@ export type RecordType =
   | "shop"
   | "odometer";
 
+// タイムライン用の判別可能ユニオン型
+export type TimelineItem =
+  | { type: "refuel"; record: RefuelRecord; date: string }
+  | { type: "quick"; record: QuickRecord; date: string }
+  | { type: "inspection"; record: InspectionRecord; date: string }
+  | { type: "shop"; record: ShopRecord; date: string }
+  | { type: "odometer"; record: OdometerRecord; date: string };
+
 // 燃費計算結果
 export interface FuelEfficiency {
   date: string;

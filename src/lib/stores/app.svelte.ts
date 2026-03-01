@@ -7,6 +7,7 @@ import type {
   OdometerRecord,
   AnyRecord,
   RecordType,
+  TimelineItem,
 } from "$lib/models/types";
 import type { NostrEvent } from "nostr-tools";
 
@@ -224,10 +225,8 @@ export const records = {
   },
 
   /** 全記録をタイムラインで取得 */
-  getTimeline(
-    vehicleId: string,
-  ): { type: RecordType; record: AnyRecord; date: string }[] {
-    const items: { type: RecordType; record: AnyRecord; date: string }[] = [];
+  getTimeline(vehicleId: string): TimelineItem[] {
+    const items: TimelineItem[] = [];
     for (const r of _refuels.filter((x) => x.vehicleId === vehicleId))
       items.push({ type: "refuel", record: r, date: r.date });
     for (const r of _quickRecords.filter((x) => x.vehicleId === vehicleId))
@@ -369,5 +368,68 @@ export const pagination = {
     _hasMore = false;
     _cursor = 0;
     _loadingMore = false;
+  },
+};
+
+// --- Maintenance Alert Settings (メンテ警告閾値) ---
+export interface MaintenanceThreshold {
+  warnDays: number;
+  dangerDays: number;
+}
+
+export type MaintenanceThresholds = Record<string, MaintenanceThreshold>;
+
+const DEFAULT_THRESHOLDS: MaintenanceThresholds = {
+  "chain-lube": { warnDays: 7, dangerDays: 14 },
+  "tire-pressure": { warnDays: 14, dangerDays: 30 },
+  wash: { warnDays: 14, dangerDays: 30 },
+  "chain-clean": { warnDays: 14, dangerDays: 30 },
+  "oil-check": { warnDays: 30, dangerDays: 60 },
+  "coolant-check": { warnDays: 30, dangerDays: 90 },
+  "battery-charge": { warnDays: 30, dangerDays: 60 },
+};
+
+function loadThresholds(): MaintenanceThresholds {
+  try {
+    const saved = localStorage.getItem("moto-log:maintenance-thresholds");
+    if (saved) {
+      return { ...DEFAULT_THRESHOLDS, ...JSON.parse(saved) };
+    }
+  } catch {
+    // ignore
+  }
+  return { ...DEFAULT_THRESHOLDS };
+}
+
+let _thresholds = $state<MaintenanceThresholds>(loadThresholds());
+
+export const maintenanceSettings = {
+  get thresholds() {
+    return _thresholds;
+  },
+  get defaults() {
+    return DEFAULT_THRESHOLDS;
+  },
+  setThreshold(action: string, warn: number, danger: number) {
+    _thresholds = {
+      ..._thresholds,
+      [action]: { warnDays: warn, dangerDays: danger },
+    };
+    try {
+      localStorage.setItem(
+        "moto-log:maintenance-thresholds",
+        JSON.stringify(_thresholds),
+      );
+    } catch {
+      // ignore
+    }
+  },
+  reset() {
+    _thresholds = { ...DEFAULT_THRESHOLDS };
+    try {
+      localStorage.removeItem("moto-log:maintenance-thresholds");
+    } catch {
+      // ignore
+    }
   },
 };

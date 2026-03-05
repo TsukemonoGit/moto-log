@@ -14,6 +14,30 @@
 
   const relays = getDefaultRelays();
 
+  // カスタム整備のユニーク名一覧を取得 (しきい値設定に利用)
+  const customActionNames = $derived(() => {
+    const names = new Set<string>();
+    for (const r of records.quickRecords) {
+      if (r.action === "custom" && r.customName) {
+        names.add(r.customName);
+      }
+    }
+    return [...names];
+  });
+
+  // カスタム整備を含む全しきい値エントリを取得
+  const allThresholdEntries = $derived(() => {
+    const entries = Object.entries(maintenanceSettings.thresholds);
+    // カスタム整備でまだしきい値がないものを追加
+    for (const name of customActionNames()) {
+      const key = `custom:${name}`;
+      if (!entries.some(([k]) => k === key)) {
+        entries.push([key, { warnDays: 30, dangerDays: 60 }]);
+      }
+    }
+    return entries;
+  });
+
   /** リレーごとの接続状態 */
   let relayStates = $state<Record<string, ConnectionState>>(
     Object.fromEntries(
@@ -209,12 +233,16 @@
       各整備項目の警告・危険日数をカスタマイズできます
     </p>
     <div class="space-y-3">
-      {#each Object.entries(maintenanceSettings.thresholds) as [action, threshold]}
+      {#each allThresholdEntries() as [action, threshold]}
         <div class="bg-bg rounded-lg px-3 py-2">
           <div class="mb-1 text-sm font-medium">
-            {QUICK_ACTION_TEXT_LABELS[
-              action as keyof typeof QUICK_ACTION_TEXT_LABELS
-            ] ?? action}
+            {#if action.startsWith("custom:")}
+              📝 {action.slice(7)}
+            {:else}
+              {QUICK_ACTION_TEXT_LABELS[
+                action as keyof typeof QUICK_ACTION_TEXT_LABELS
+              ] ?? action}
+            {/if}
           </div>
           <div class="flex items-center gap-2 text-xs">
             <label class="text-text-muted">注意:</label>

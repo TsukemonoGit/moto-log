@@ -54,6 +54,10 @@
         vehicleId,
         date,
         action,
+        customName:
+          action === "custom" && customActionName.trim()
+            ? customActionName.trim()
+            : undefined,
         odometer: quickOdometer ? parseFloat(quickOdometer) : undefined,
         notes: quickNotes.trim() || undefined,
         createdAt: now,

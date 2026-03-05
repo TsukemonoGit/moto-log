@@ -39,6 +39,7 @@
   // --- クイック記録用の状態 ---
   let quickDate = $state("");
   let quickAction = $state<QuickActionType>("tire-pressure");
+  let quickCustomName = $state("");
   let quickOdometer = $state("");
   let quickNotes = $state("");
 
@@ -80,6 +81,7 @@
       const r = recordData as QuickRecord;
       quickDate = r.date;
       quickAction = r.action;
+      quickCustomName = r.customName ?? "";
       quickOdometer = r.odometer?.toString() ?? "";
       quickNotes = r.notes ?? "";
     } else if (recordType === "inspection") {
@@ -171,12 +173,19 @@
       };
       if (quickOdometer) content.odometer = parseFloat(quickOdometer);
       if (quickNotes.trim()) content.notes = quickNotes.trim();
+      if (quickAction === "custom" && quickCustomName.trim()) {
+        content.customName = quickCustomName.trim();
+      }
 
       await publishEvent(r.id, "quick", content);
       records.updateQuick({
         ...r,
         date: quickDate,
         action: quickAction,
+        customName:
+          quickAction === "custom" && quickCustomName.trim()
+            ? quickCustomName.trim()
+            : undefined,
         odometer: quickOdometer ? parseFloat(quickOdometer) : undefined,
         notes: quickNotes.trim() || undefined,
       });
@@ -478,6 +487,21 @@
             {/each}
           </div>
         </div>
+        {#if quickAction === "custom"}
+          <div>
+            <label
+              for="quickCustomName"
+              class="text-text-muted mb-1 block text-sm">整備内容</label
+            >
+            <input
+              id="quickCustomName"
+              type="text"
+              bind:value={quickCustomName}
+              placeholder="例: ヘルメット撥水処理"
+              class="bg-surface-light w-full rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        {/if}
         <div>
           <label for="quickOdometer" class="text-text-muted mb-1 block text-sm"
             >走行距離 (km)</label

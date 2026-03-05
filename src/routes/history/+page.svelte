@@ -189,7 +189,21 @@
             ? 'bg-blue-600 text-white'
             : 'bg-surface-light text-text-muted'}"
         >
-          {QUICK_ACTION_LABELS[action] ?? action}
+          {#if action === "custom"}
+            {@const customNames = records.quickRecords
+              .filter(
+                (r) =>
+                  r.vehicleId === vehicleId &&
+                  r.action === "custom" &&
+                  r.customName,
+              )
+              .map((r) => r.customName)}
+            {customNames.length > 0
+              ? `📝 ${[...new Set(customNames)].join("/")}`
+              : (QUICK_ACTION_LABELS[action] ?? action)}
+          {:else}
+            {QUICK_ACTION_LABELS[action] ?? action}
+          {/if}
         </button>
       {/each}
     </div>
@@ -308,9 +322,13 @@
                   <span class="mt-0.5 text-xl">{getIcon(item.type)}</span>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between">
-                      <span class="text-sm font-medium"
-                        >{QUICK_ACTION_LABELS[r.action] ?? "整備"}</span
-                      >
+                      <span class="text-sm font-medium">
+                        {#if r.action === "custom" && r.customName}
+                          📝 {r.customName}
+                        {:else}
+                          {QUICK_ACTION_LABELS[r.action] ?? "整備"}
+                        {/if}
+                      </span>
                       <span class="text-text-muted text-xs"
                         >{item.date.slice(5)}</span
                       >

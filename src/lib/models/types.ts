@@ -43,6 +43,7 @@ export interface QuickRecord {
   vehicleId: string;
   date: string;
   action: QuickActionType;
+  customName?: string; // action === "custom" の場合の整備内容名
   odometer?: number;
   notes?: string;
   createdAt: number;

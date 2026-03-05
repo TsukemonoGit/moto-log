@@ -67,6 +67,38 @@
       });
     }
 
+    // カスタム整備: customName ごとにグルーピングして追跡
+    const customRecs = quickRecs.filter(
+      (r) => r.action === "custom" && r.customName,
+    );
+    const customNames = [...new Set(customRecs.map((r) => r.customName!))];
+    for (const name of customNames) {
+      const latest = customRecs
+        .filter((r) => r.customName === name)
+        .sort((a, b) => (a.date > b.date ? -1 : 1))[0];
+      const days = latest ? daysAgo(latest.date) : null;
+      const thresholdKey = `custom:${name}`;
+      const threshold = maintenanceSettings.thresholds[thresholdKey] ?? {
+        warnDays: 30,
+        dangerDays: 60,
+      };
+      let status: "ok" | "warn" | "danger" | "none" = "none";
+      if (days != null) {
+        if (days >= threshold.dangerDays) status = "danger";
+        else if (days >= threshold.warnDays) status = "warn";
+        else status = "ok";
+      }
+      result.push({
+        action: thresholdKey,
+        icon: "📝",
+        label: name,
+        date: latest?.date ?? null,
+        days,
+        status,
+        link: "/log",
+      });
+    }
+
     // ショップ記録からオイル交換の最終日も探す
     const shopOilChange = records.shopRecords
       .filter(

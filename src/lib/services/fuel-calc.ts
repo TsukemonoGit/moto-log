@@ -112,13 +112,12 @@ export function getTotalFuelCost(refuels: RefuelRecord[]): number {
 }
 
 /**
- * 総走行距離 (ODO ベース)
+ * 最新 ODO (走行距離計) を返す
  */
 export function getTotalDistance(refuels: RefuelRecord[]): number | null {
   const withOdo = refuels.filter((r) => r.odometer != null);
-  if (withOdo.length < 2) return null;
-  const sorted = withOdo.sort((a, b) => a.odometer! - b.odometer!);
-  return sorted[sorted.length - 1].odometer! - sorted[0].odometer!;
+  if (withOdo.length === 0) return null;
+  return Math.max(...withOdo.map((r) => r.odometer!));
 }
 
 /**

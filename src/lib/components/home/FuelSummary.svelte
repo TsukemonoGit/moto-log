@@ -105,7 +105,7 @@
   <div class="bg-surface grid grid-cols-2 gap-3 rounded-xl p-4">
     {#if totalDistance != null}
       <div class="text-center">
-        <div class="text-text-muted text-xs">総走行距離</div>
+        <div class="text-text-muted text-xs">ODO</div>
         <div class="text-lg font-bold">
           {totalDistance.toLocaleString()} km
         </div>

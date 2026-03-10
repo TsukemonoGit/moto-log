@@ -12,6 +12,7 @@
   import { loadAllData } from "$lib/nostr/subscribe";
   import { getRxNostr } from "$lib/nostr/client";
   import Toast from "$lib/components/Toast.svelte";
+  import { waitNostr } from "nip07-awaiter";
 
   let { children } = $props();
   let showVehicleMenu = $state(false);
@@ -65,7 +66,8 @@
     //二重に起動しない
     if (initializing) {
       // @konemono/nostr-login を動的インポート (全ページ共通)
-      import("@konemono/nostr-login")
+      waitNostr(1000)
+        .then(() => import("@konemono/nostr-login"))
         .then(({ init }) => {
           init({
             title: "Nostr Moto Log",

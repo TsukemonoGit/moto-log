@@ -50,18 +50,17 @@
       console.error("Auto login failed:", e);
     }
   }
-
+  // nostr-login のイベントをリッスン (全ページ共通)
+  const handler = ((e: Event) => {
+    const ce = e as CustomEvent;
+    if (ce.detail.type === "login" || ce.detail.type === "signup") {
+      handleAuthLogin();
+    } else if (ce.detail.type === "logout") {
+      auth.logout();
+      goto("/");
+    }
+  }) as EventListener;
   onMount(() => {
-    // nostr-login のイベントをリッスン (全ページ共通)
-    const handler = ((e: Event) => {
-      const ce = e as CustomEvent;
-      if (ce.detail.type === "login" || ce.detail.type === "signup") {
-        handleAuthLogin();
-      } else if (ce.detail.type === "logout") {
-        auth.logout();
-        goto("/");
-      }
-    }) as EventListener;
     document.addEventListener("nlAuth", handler);
 
     // @konemono/nostr-login を動的インポート (全ページ共通)

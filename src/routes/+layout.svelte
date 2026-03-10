@@ -62,31 +62,21 @@
   }) as EventListener;
   onMount(() => {
     document.addEventListener("nlAuth", handler);
-
-    // @konemono/nostr-login を動的インポート (全ページ共通)
-    import("@konemono/nostr-login")
-      .then(({ init }) => {
-        init({
-          title: "Nostr Moto Log",
-          perms: "sign_event:30078,sign_event:5",
+    //二重に起動しない
+    if (initializing) {
+      // @konemono/nostr-login を動的インポート (全ページ共通)
+      import("@konemono/nostr-login")
+        .then(({ init }) => {
+          init({
+            title: "Nostr Moto Log",
+            perms: "sign_event:30078,sign_event:5",
+          });
+        })
+        .catch((e) => console.error("Failed to init nostr-login:", e))
+        .finally(() => {
+          initializing = false;
         });
-      })
-      .catch((e) => console.error("Failed to init nostr-login:", e))
-      .finally(() => {
-        initializing = false;
-
-        // nlAuth が init 完了後すぐに発火しないケースへのフォールバック:
-        // 短い遅延後にまだ未ログインなら window.nostr を直接チェックして自動ログインを試行
-        setTimeout(() => {
-          if (!auth.loggedIn && (window as any).nostr) {
-            handleAuthLogin();
-          }
-        }, 500);
-      });
-
-    return () => {
-      document.removeEventListener("nlAuth", handler);
-    };
+    }
   });
 
   // 未認証で / 以外にいる場合はリダイレクト

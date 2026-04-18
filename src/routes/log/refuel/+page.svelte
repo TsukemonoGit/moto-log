@@ -251,6 +251,13 @@
         ></span>
       </button>
     </label>
+    <p class="text-xs text-text-muted mt-1">
+      <span class="font-bold">※ 満タンチェックについて</span><br />
+      給油量と走行距離を両方入力していれば、満タンかどうかに関係なく燃費計算されます。<br
+      />
+      満タンチェックは「区間のリセット」や「量不明時の区切り」用途です。<br />
+      毎回fuelAmountとODOを入れている場合は、どちらでもOKです。
+    </p>
 
     <!-- 金額セクション (任意・折りたたみ) -->
     <details>

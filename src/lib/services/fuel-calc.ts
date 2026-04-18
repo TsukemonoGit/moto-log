@@ -10,6 +10,7 @@ import type { RefuelRecord, FuelEfficiency } from "$lib/models/types";
  *   - 満タン＋ODO あり → 基準点としてリセット (燃費計算の区間は切れる)
  *   - それ以外 → スキップ (積算もしない)
  */
+
 export function calculateFuelEfficiency(
   refuels: RefuelRecord[],
 ): FuelEfficiency[] {
@@ -17,48 +18,40 @@ export function calculateFuelEfficiency(
   const sorted = [...refuels].sort((a, b) => (a.date < b.date ? -1 : 1));
 
   const results: FuelEfficiency[] = [];
-  let lastFullTankOdo: number | null = null;
-  let accumulatedFuel = 0;
-  let hasUnknownFuel = false; // 区間内に fuelAmount 不明のレコードがあるか
+  let lastOdo: number | null = null;
+  let lastFuel: number | null = null;
+  let lastIsFullTank: boolean | null = null;
+  let lastDate: string | null = null;
 
   for (const record of sorted) {
     const hasFuel = record.fuelAmount != null && record.fuelAmount > 0;
+    const hasOdo = record.odometer != null;
 
-    if (record.odometer == null) {
-      // ODO なし → 燃費計算スキップ、ただし燃料は積算
-      if (lastFullTankOdo != null && !record.isFullTank && hasFuel) {
-        accumulatedFuel += record.fuelAmount!;
-      }
-      if (!hasFuel) hasUnknownFuel = true;
-      continue;
-    }
-
-    if (record.isFullTank) {
-      if (lastFullTankOdo != null && hasFuel && !hasUnknownFuel) {
-        // fuelAmount がわかっていて、区間内に不明 fuel がなければ計算可能
-        const distance = record.odometer - lastFullTankOdo;
-        const totalFuel = accumulatedFuel + record.fuelAmount!;
-
-        if (distance > 0 && totalFuel > 0) {
+    // 区間の始点条件: 満タン or fuelAmount+ODO両方あり
+    if (hasOdo && (record.isFullTank || hasFuel)) {
+      if (
+        lastOdo != null &&
+        lastFuel != null &&
+        lastDate != null &&
+        hasOdo &&
+        hasFuel
+      ) {
+        const distance = record.odometer! - lastOdo;
+        const fuel = record.fuelAmount!;
+        if (distance > 0 && fuel > 0) {
           results.push({
             date: record.date,
-            kmPerLiter: Math.round((distance / totalFuel) * 100) / 100,
+            kmPerLiter: Math.round((distance / fuel) * 100) / 100,
             distance,
-            fuelAmount: totalFuel,
+            fuelAmount: fuel,
           });
         }
       }
-      // 満タン＋ODO ありなら常に基準点をリセット
-      lastFullTankOdo = record.odometer;
-      accumulatedFuel = 0;
-      hasUnknownFuel = false;
-    } else {
-      // 非満タン → 燃料だけ積算
-      if (hasFuel) {
-        accumulatedFuel += record.fuelAmount!;
-      } else {
-        hasUnknownFuel = true;
-      }
+      // 区間リセット: 満タンならfuelAmount不明でもOK、そうでなければ両方必要
+      lastOdo = record.odometer!;
+      lastFuel = hasFuel ? record.fuelAmount! : null;
+      lastIsFullTank = record.isFullTank;
+      lastDate = record.date;
     }
   }
 

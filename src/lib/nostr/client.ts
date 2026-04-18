@@ -8,7 +8,7 @@ import { verifier } from "rx-nostr-crypto";
 const DEFAULT_RELAYS = [
   "wss://x.kojira.io",
   "wss://nos.lol",
-  "wss://relay.nostr.wirednet.jp",
+  "wss://nfrelay.app",
 ];
 
 let rxNostr: ReturnType<typeof createRxNostr> | null = null;
